@@ -4,17 +4,27 @@ AC_PREREQ([2.69])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([subdir-objects -Wall -Werror])
+AM_INIT_AUTOMAKE([subdir-objects])
 
 AC_CONFIG_FILES([Makefile])
 
 # clear default C++ flags (such as -O2)
 : ${CXXFLAGS=""}
 AC_PROG_CXX
+AC_PROG_RANLIB
 
 PKG_CHECK_MODULES(SSL, openssl >= 1.0.1,
                   [],
                   [echo "OpenSSL is required"
                    exit -1])
+
+AC_ARG_VAR(GTEST_DIR,
+           Google Test Framework directory)
+
+AS_IF([test "$GTEST_DIR" != ""],
+      [echo "Google Test Framework found"],
+      [echo "Google Test Framework not found"
+       echo -e "\tYou must pass GTEST_DIR=<dir> to compile testcases"])
+AM_CONDITIONAL([GOOGLE_TEST], [test "$GTEST_DIR" != ""])
 
 AC_OUTPUT
