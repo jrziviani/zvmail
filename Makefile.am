@@ -7,14 +7,17 @@ endif
 
 # Main program ============================================
 zvmail_CXXFLAGS = -std=c++11 \
-			  -g3 \
-			  -O0 \
-			  -Wall \
-			  -Werror
+				  -g3 \
+				  -O0 \
+				  -Wall \
+				  -Werror
 zvmail_SOURCES = src/base/tcpclient.cpp \
-				 src/base/imap.cpp
-zvmail_CFLAGS = $(SSL_CFLAGS)
-zvmail_LDADD = $(SSL_LIBS)
+				 src/base/imap.cpp \
+				 src/utils/utils.cpp
+zvmail_CFLAGS = $(SSL_CFLAGS) \
+				$(PCRE_CFLAGS)
+zvmail_LDADD = $(SSL_LIBS) \
+			   $(PCRE_LIBS)
 
 if GOOGLE_TEST
 # Test program ============================================
@@ -23,11 +26,18 @@ test_zvmail_CXXFLAGS = -std=c++11 \
 					   -g3 \
 					   -pthread \
 					   -isystem \
+					   -Wall \
+					   -Werror
 					   $(GTEST_DIR)/include
 test_zvmail_SOURCES = test/main.cpp \
-					  src/base/tcpclient.cpp
+					  src/base/tcpclient.cpp \
+					  #src/base/imap.cpp \
+					  src/utils/utils.cpp
+test_zvmail_CFLAGS = $(SSL_CFLAGS) \
+					 $(PCRE_CFLAGS)
 test_zvmail_LDADD = test/libgtest.a \
-					$(SSL_LIBS)
+					$(SSL_LIBS) \
+					$(PCRE_LIBS)
 
 # Custom targets ==========================================
 check: test_zvmail

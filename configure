@@ -588,6 +588,8 @@ LIBOBJS
 GOOGLE_TEST_FALSE
 GOOGLE_TEST_TRUE
 GTEST_DIR
+PCRE_LIBS
+PCRE_CFLAGS
 SSL_LIBS
 SSL_CFLAGS
 PKG_CONFIG_LIBDIR
@@ -696,6 +698,8 @@ PKG_CONFIG_PATH
 PKG_CONFIG_LIBDIR
 SSL_CFLAGS
 SSL_LIBS
+PCRE_CFLAGS
+PCRE_LIBS
 GTEST_DIR'
 
 
@@ -1333,6 +1337,8 @@ Some influential environment variables:
               path overriding pkg-config's built-in search path
   SSL_CFLAGS  C compiler flags for SSL, overriding pkg-config
   SSL_LIBS    linker flags for SSL, overriding pkg-config
+  PCRE_CFLAGS C compiler flags for PCRE, overriding pkg-config
+  PCRE_LIBS   linker flags for PCRE, overriding pkg-config
   GTEST_DIR   Google Test Framework directory
 
 Use these variables to override the choices made by `configure' or to help
@@ -3402,6 +3408,80 @@ $as_echo "no" >&6; }
 else
 	SSL_CFLAGS=$pkg_cv_SSL_CFLAGS
 	SSL_LIBS=$pkg_cv_SSL_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PCRE" >&5
+$as_echo_n "checking for PCRE... " >&6; }
+
+if test -n "$PCRE_CFLAGS"; then
+    pkg_cv_PCRE_CFLAGS="$PCRE_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpcrecpp >= 8.31\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libpcrecpp >= 8.31") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PCRE_CFLAGS=`$PKG_CONFIG --cflags "libpcrecpp >= 8.31" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PCRE_LIBS"; then
+    pkg_cv_PCRE_LIBS="$PCRE_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpcrecpp >= 8.31\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libpcrecpp >= 8.31") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PCRE_LIBS=`$PKG_CONFIG --libs "libpcrecpp >= 8.31" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PCRE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libpcrecpp >= 8.31" 2>&1`
+        else
+	        PCRE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libpcrecpp >= 8.31" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PCRE_PKG_ERRORS" >&5
+
+	echo "libpcre3-dev >= 8.31 is required"
+                   exit -1
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	echo "libpcre3-dev >= 8.31 is required"
+                   exit -1
+else
+	PCRE_CFLAGS=$pkg_cv_PCRE_CFLAGS
+	PCRE_LIBS=$pkg_cv_PCRE_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 

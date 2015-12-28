@@ -19,6 +19,7 @@
 import sys
 import os
 import shutil
+import re
 
 def apply_c_cpp_header(path):
     apply_header(path, '//', 0)
@@ -34,6 +35,9 @@ def apply_header(path, comment_symbol, line_to_start):
         if line == '\n':
             return comment_symbol + '\n'
         return comment_symbol + ' ' + line
+
+    if check_header(path, comment_symbol) is not None:
+        return
 
     print 'Applying header to %s' % path
 
@@ -57,6 +61,18 @@ def apply_header(path, comment_symbol, line_to_start):
                 dest.write(line)
 
     shutil.move(path + '.tmp', path)
+
+def check_header(path, comment_symbol):
+    with open(path, 'r') as source:
+        for line in source:
+            if not line.startswith(comment_symbol):
+                continue
+            if 'zmvar:' not in line:
+                continue
+
+            return re.search('zmvar:(?P<sl>[0-9]+),(?P<el>[0-9]+)', line)
+
+    return None
 
 def main(argv):
     '''

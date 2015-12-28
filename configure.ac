@@ -18,6 +18,11 @@ PKG_CHECK_MODULES(SSL, openssl >= 1.0.1,
                   [echo "OpenSSL is required"
                    exit -1])
 
+PKG_CHECK_MODULES(PCRE, libpcrecpp >= 8.31,
+                  [],
+                  [echo "libpcre3-dev >= 8.31 is required"
+                   exit -1])
+
 AC_ARG_VAR(GTEST_DIR,
            Google Test Framework directory)
 

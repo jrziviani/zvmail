@@ -107,13 +107,14 @@ am__dirstamp = $(am__leading_dot)dirstamp
 test_zvmail_OBJECTS = $(am_test_zvmail_OBJECTS)
 am__DEPENDENCIES_1 =
 @GOOGLE_TEST_TRUE@test_zvmail_DEPENDENCIES = test/libgtest.a \
-@GOOGLE_TEST_TRUE@	$(am__DEPENDENCIES_1)
+@GOOGLE_TEST_TRUE@	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 test_zvmail_LINK = $(CXXLD) $(test_zvmail_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_zvmail_OBJECTS = src/base/zvmail-tcpclient.$(OBJEXT) \
-	src/base/zvmail-imap.$(OBJEXT)
+	src/base/zvmail-imap.$(OBJEXT) \
+	src/utils/zvmail-utils.$(OBJEXT)
 zvmail_OBJECTS = $(am_zvmail_OBJECTS)
-zvmail_DEPENDENCIES = $(am__DEPENDENCIES_1)
+zvmail_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 zvmail_LINK = $(CXXLD) $(zvmail_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
@@ -234,6 +235,8 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PCRE_CFLAGS = @PCRE_CFLAGS@
+PCRE_LIBS = @PCRE_LIBS@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
@@ -290,16 +293,21 @@ ACLOCAL_AMFLAGS = -Im4
 
 # Main program ============================================
 zvmail_CXXFLAGS = -std=c++11 \
-			  -g3 \
-			  -O0 \
-			  -Wall \
-			  -Werror
+				  -g3 \
+				  -O0 \
+				  -Wall \
+				  -Werror
 
 zvmail_SOURCES = src/base/tcpclient.cpp \
-				 src/base/imap.cpp
+				 src/base/imap.cpp \
+				 src/utils/utils.cpp
 
-zvmail_CFLAGS = $(SSL_CFLAGS)
-zvmail_LDADD = $(SSL_LIBS)
+zvmail_CFLAGS = $(SSL_CFLAGS) \
+				$(PCRE_CFLAGS)
+
+zvmail_LDADD = $(SSL_LIBS) \
+			   $(PCRE_LIBS)
+
 
 # Test program ============================================
 @GOOGLE_TEST_TRUE@test_zvmail_CXXFLAGS = -std=c++11 \
@@ -307,13 +315,20 @@ zvmail_LDADD = $(SSL_LIBS)
 @GOOGLE_TEST_TRUE@					   -g3 \
 @GOOGLE_TEST_TRUE@					   -pthread \
 @GOOGLE_TEST_TRUE@					   -isystem \
-@GOOGLE_TEST_TRUE@					   $(GTEST_DIR)/include
+@GOOGLE_TEST_TRUE@					   -Wall \
+@GOOGLE_TEST_TRUE@					   -Werror
 
 @GOOGLE_TEST_TRUE@test_zvmail_SOURCES = test/main.cpp \
-@GOOGLE_TEST_TRUE@					  src/base/tcpclient.cpp
+@GOOGLE_TEST_TRUE@					  src/base/tcpclient.cpp \
+@GOOGLE_TEST_TRUE@					  #src/base/imap.cpp \
+@GOOGLE_TEST_TRUE@					  src/utils/utils.cpp
+
+@GOOGLE_TEST_TRUE@test_zvmail_CFLAGS = $(SSL_CFLAGS) \
+@GOOGLE_TEST_TRUE@					 $(PCRE_CFLAGS)
 
 @GOOGLE_TEST_TRUE@test_zvmail_LDADD = test/libgtest.a \
-@GOOGLE_TEST_TRUE@					$(SSL_LIBS)
+@GOOGLE_TEST_TRUE@					$(SSL_LIBS) \
+@GOOGLE_TEST_TRUE@					$(PCRE_LIBS)
 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -435,6 +450,14 @@ src/base/zvmail-tcpclient.$(OBJEXT): src/base/$(am__dirstamp) \
 	src/base/$(DEPDIR)/$(am__dirstamp)
 src/base/zvmail-imap.$(OBJEXT): src/base/$(am__dirstamp) \
 	src/base/$(DEPDIR)/$(am__dirstamp)
+src/utils/$(am__dirstamp):
+	@$(MKDIR_P) src/utils
+	@: > src/utils/$(am__dirstamp)
+src/utils/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/utils/$(DEPDIR)
+	@: > src/utils/$(DEPDIR)/$(am__dirstamp)
+src/utils/zvmail-utils.$(OBJEXT): src/utils/$(am__dirstamp) \
+	src/utils/$(DEPDIR)/$(am__dirstamp)
 
 zvmail$(EXEEXT): $(zvmail_OBJECTS) $(zvmail_DEPENDENCIES) $(EXTRA_zvmail_DEPENDENCIES) 
 	@rm -f zvmail$(EXEEXT)
@@ -443,6 +466,7 @@ zvmail$(EXEEXT): $(zvmail_OBJECTS) $(zvmail_DEPENDENCIES) $(EXTRA_zvmail_DEPENDE
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f src/base/*.$(OBJEXT)
+	-rm -f src/utils/*.$(OBJEXT)
 	-rm -f test/*.$(OBJEXT)
 
 distclean-compile:
@@ -451,6 +475,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/base/$(DEPDIR)/test_zvmail-tcpclient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/base/$(DEPDIR)/zvmail-imap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/base/$(DEPDIR)/zvmail-tcpclient.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/utils/$(DEPDIR)/zvmail-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/test_zvmail-main.Po@am__quote@
 
 .cpp.o:
@@ -524,6 +549,20 @@ src/base/zvmail-imap.obj: src/base/imap.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='src/base/imap.cpp' object='src/base/zvmail-imap.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zvmail_CXXFLAGS) $(CXXFLAGS) -c -o src/base/zvmail-imap.obj `if test -f 'src/base/imap.cpp'; then $(CYGPATH_W) 'src/base/imap.cpp'; else $(CYGPATH_W) '$(srcdir)/src/base/imap.cpp'; fi`
+
+src/utils/zvmail-utils.o: src/utils/utils.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zvmail_CXXFLAGS) $(CXXFLAGS) -MT src/utils/zvmail-utils.o -MD -MP -MF src/utils/$(DEPDIR)/zvmail-utils.Tpo -c -o src/utils/zvmail-utils.o `test -f 'src/utils/utils.cpp' || echo '$(srcdir)/'`src/utils/utils.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) src/utils/$(DEPDIR)/zvmail-utils.Tpo src/utils/$(DEPDIR)/zvmail-utils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='src/utils/utils.cpp' object='src/utils/zvmail-utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zvmail_CXXFLAGS) $(CXXFLAGS) -c -o src/utils/zvmail-utils.o `test -f 'src/utils/utils.cpp' || echo '$(srcdir)/'`src/utils/utils.cpp
+
+src/utils/zvmail-utils.obj: src/utils/utils.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zvmail_CXXFLAGS) $(CXXFLAGS) -MT src/utils/zvmail-utils.obj -MD -MP -MF src/utils/$(DEPDIR)/zvmail-utils.Tpo -c -o src/utils/zvmail-utils.obj `if test -f 'src/utils/utils.cpp'; then $(CYGPATH_W) 'src/utils/utils.cpp'; else $(CYGPATH_W) '$(srcdir)/src/utils/utils.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) src/utils/$(DEPDIR)/zvmail-utils.Tpo src/utils/$(DEPDIR)/zvmail-utils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='src/utils/utils.cpp' object='src/utils/zvmail-utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zvmail_CXXFLAGS) $(CXXFLAGS) -c -o src/utils/zvmail-utils.obj `if test -f 'src/utils/utils.cpp'; then $(CYGPATH_W) 'src/utils/utils.cpp'; else $(CYGPATH_W) '$(srcdir)/src/utils/utils.cpp'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -782,6 +821,8 @@ distclean-generic:
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
 	-rm -f src/base/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/base/$(am__dirstamp)
+	-rm -f src/utils/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/utils/$(am__dirstamp)
 	-rm -f test/$(DEPDIR)/$(am__dirstamp)
 	-rm -f test/$(am__dirstamp)
 
@@ -794,7 +835,7 @@ clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf src/base/$(DEPDIR) test/$(DEPDIR)
+	-rm -rf src/base/$(DEPDIR) src/utils/$(DEPDIR) test/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -842,7 +883,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf src/base/$(DEPDIR) test/$(DEPDIR)
+	-rm -rf src/base/$(DEPDIR) src/utils/$(DEPDIR) test/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -879,6 +920,7 @@ uninstall-am: uninstall-binPROGRAMS
 	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
 	uninstall-am uninstall-binPROGRAMS
 
+@GOOGLE_TEST_TRUE@					   $(GTEST_DIR)/include
 
 # Custom targets ==========================================
 @GOOGLE_TEST_TRUE@check: test_zvmail
