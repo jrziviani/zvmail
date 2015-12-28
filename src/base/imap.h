@@ -19,27 +19,53 @@
 
 #include "tcpclient.h"
 #include <string>
+#include <set>
 #include <vector>
-
+#include <memory>
+#include <unordered_map>
 
 class imap
 {
-    using folder_list = std::vector<std::string>;
+    struct message_t
+    {
+        int _id;
+        std::string _timestamp;
+        std::string _subject;
+        bool _read;
+        bool _recent;
+    };
+
+    struct folder_t
+    {
+        long _n_messages;
+        long _n_unreads;
+        long _n_recents;
+        long _n_subfolders;
+        std::vector<message_t> _messages;
+        std::unordered_map<std::string, std::unique_ptr<folder_t>> _children;
+    };
+
+    using boxes_t = std::unordered_map<std::string, std::unique_ptr<folder_t>>;
 
     public:
         imap(const tcp_client &tcp);
         ~imap();
 
-        folder_list get_folders() const;
+        //folder_t get_folders() const;
         std::string get_header_by_folder(std::string &folder) const;
+        void print_all(const boxes_t &parent, std::string tabs = "");
 
     private:
         void init_imap();
         void finish_imap();
+        void retrieve_messages();
+        void retrieve_folders();
+        void fill_folders(boxes_t &parent,
+                std::vector<std::string> folders);
 
     private:
         const tcp_client &_tcpclient;
-        folder_list _folders;
+        boxes_t _folders;
 };
 
 

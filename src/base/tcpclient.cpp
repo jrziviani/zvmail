@@ -134,11 +134,11 @@ string tcp_client::send_nosecure_message(const string &msg) const
     ssize_t check_recv;
     while (true) {
         check_recv = recv(_socket, buffer, BUFFER_SIZE, 0);
-        if (check_recv == 0)
+        if (check_recv <= 0)
             break;
 
-        if (check_recv < 0)
-            throw runtime_error(strerror(errno));
+        //if (check_recv < 0)
+            //throw runtime_error(strerror(errno));
 
         if (check_recv <= BUFFER_SIZE)
             ret += buffer;
