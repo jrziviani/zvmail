@@ -45,7 +45,7 @@ check: test_zvmail
 	@./test_zvmail
 
 test/libgtest.a:
-	@echo "Building Google Test Framework"
+	@echo "Building Google Test Framework..."
 	@g++ -isystem -pthread \
 		-I$(GTEST_DIR) \
 		-c $(GTEST_DIR)/src/gtest-all.cc
@@ -53,5 +53,14 @@ test/libgtest.a:
 	@rm gtest-all.o
 
 endif
+
+# idea from: http://bit.ly/1R9CGuC
+ctags: zvmail
+	@echo "generating ctags..."
+	find . \( -name \*.cpp -o -name \*.h \) \
+		| xargs g++ -std=c++11 -M -I $(SSL_CFLAGS) $(PCRE_CFLAGS) . \
+		| sed -e 's/[\\ ]/\n/g' | sed -e '/^$$/d' -e '/\.o:[ \t]*$$/d' \
+		| ctags -V -f .ctags --c++-kinds=+p --fields=+iaS \
+	   	--extra=+q -L - --language-force=c++ --exclude='.git'
 
 .PHONY: check rebuild-gtest
