@@ -9,6 +9,7 @@ zvmail
 test_zvmail
 autom4te.cache
 libgtest.a
-*/.dirstamp
-*/.deps/*
+.dirstamp
+.deps
+.ctags
 *.o
