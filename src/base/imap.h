@@ -22,30 +22,40 @@
 #include <set>
 #include <vector>
 #include <memory>
+#include <ostream>
 #include <unordered_map>
 
 class imap
 {
-    struct message_t
+    struct message_t // 20 bytes
     {
         int _id;
         std::string _timestamp;
         std::string _subject;
+        std::string _body;
         bool _read;
         bool _recent;
     };
 
     struct folder_t
     {
-        long _n_messages;
-        long _n_unreads;
-        long _n_recents;
-        long _n_subfolders;
+        long long _n_messages;
+        long long _n_unreads;
+        long long _n_recents;
+        long long _n_subfolders;
+        std::string _name;
+        std::string _parents;
         std::vector<message_t> _messages;
         std::unordered_map<std::string, std::unique_ptr<folder_t>> _children;
     };
 
-    using boxes_t = std::unordered_map<std::string, std::unique_ptr<folder_t>>;
+    // aliases
+    using boxes_t     = std::unordered_map<std::string,
+          std::unique_ptr<folder_t>>;
+    using boxes_cit   = boxes_t::const_iterator;
+    using strings_t   = std::vector<std::string>;
+    using callback_t  = std::function<void(boxes_cit box)>;
+    using callbacks_t = std::vector<callback_t>;
 
     public:
         imap(const tcp_client &tcp);
@@ -56,17 +66,50 @@ class imap
         void print_all(const boxes_t &parent, std::string tabs = "");
 
     private:
+        std::string msg_head(bool generate_new = true);
+
         void init_imap();
         void finish_imap();
+
         void retrieve_messages();
         void retrieve_folders();
-        void fill_folders(boxes_t &parent,
-                std::vector<std::string> folders);
+        void fill_folder_tree(boxes_t &folder,
+                          strings_t folder_list,
+                          std::string parent = "");
+
+        void for_each_folder(const callback_t &callback) const;
+        void for_each_folder(callbacks_t &callback_list) const;
+
+        // callbacks
+        void parse_folder_details(boxes_cit box);
+        void parse_message_subjects(boxes_cit box);
+
+        friend std::ostream &operator<<(std::ostream &os, const imap &imap_obj);
 
     private:
         const tcp_client &_tcpclient;
         boxes_t _folders;
+        char _separator;
+        int _counter;
 };
+
+std::string imap::msg_head(bool generate_new)
+{
+    if (generate_new)
+        return "a" + std::to_string(++_counter);
+
+    return "a" + std::to_string(_counter);
+}
+
+std::ostream &operator<<(std::ostream &os, const imap &imap_obj)
+{
+    imap_obj.for_each_folder([&os](imap::boxes_cit box) {
+            os << box->first << ": " << box->second->_parents << "\n";
+            os << box->second->_n_messages << "\n";
+            os << "---------------------------------------\n";
+    });
+    return os;
+}
 
 
 #endif

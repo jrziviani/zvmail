@@ -19,13 +19,21 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <stack>
+#include <functional>
 
 #include <pcrecpp.h>
 
 using namespace std;
 
+// constants ------------------------------------------------------------------
+const char FOLDER_REGEX[] = R"(\* LIST \(((\\\w+\s?)+)\) \"(.)\" (.+))";
+
+const char FOLDER_HEADER_REGEX[] = R"(.*\* FLAGS\s?\(((\\|\$?[a-zA-Z0-9]+\s?)+).*\*\s?([0-9]+)\s?EXISTS.*\*\s?([0-9]+)\s?RECENT.*a[0-9]+\sOK.*)";
+
+// implementation -------------------------------------------------------------
 imap::imap(const tcp_client &tcp) :
-    _tcpclient(tcp)
+    _tcpclient(tcp), _counter(0)
 {
     init_imap();
     retrieve_folders();
@@ -38,23 +46,20 @@ imap::~imap()
     cout << _tcpclient.send_message("a1 logout\r\n") << endl;
 }
 
-void imap::retrieve_messages()
-{
-    cout << _tcpclient.send_message("a1 select INBOX\r\n");
-    string msg_messages = _tcpclient.send_message("a1 fetch 1:* BODY.PEEK[HEADER.FIELDS (SUBJECT)]\r\n");
-    cout << msg_messages << endl;
-}
-
 void imap::retrieve_folders()
 {
     // request the list of folders for the current account to the imap
     // server and split the results in a vector
-    string msg_folders = _tcpclient.send_message("a1 list \"\" *\r\n");
-    vector<string> folder_list = zvmail::split(msg_folders);
+    string msg_folders = _tcpclient.send_message(msg_head() +
+                                                 " list \"\" *\r\n");
+    strings_t folder_list = zvmail::split(msg_folders);
 
     // extract the required data from the imap response and starting
     // filling the folder data structure with folders name
-    pcrecpp::RE regex(R"(\* LIST \(((\\\w+\s?)+)\) \"(.)\" (.+))");
+    pcrecpp::RE regex(FOLDER_REGEX,
+            pcrecpp::RE_Options()
+            .set_utf8(true));
+
     string flags, folder_name, separator;
     for (const auto &folder : folder_list) {
         if (!regex.FullMatch(folder,
@@ -64,13 +69,101 @@ void imap::retrieve_folders()
                     &folder_name))
             continue;
 
+        _separator = separator[0];
         vector<string> folders = zvmail::split(zvmail::rstrip(folder_name),
                 separator[0]);
-        fill_folders(_folders, folders);
+        fill_folder_tree(_folders, folders);
     }
+}
 
-    // TODO: replace by a logger...
-    print_all(_folders);
+void imap::fill_folder_tree(boxes_t &folder,
+        strings_t folder_list,
+        string parent)
+{
+    if (folder_list.empty())
+        return;
+
+    if (folder.find(folder_list[0]) == folder.end()) {
+        folder.emplace(make_pair(folder_list[0],
+                    unique_ptr<folder_t>(new folder_t)));
+        folder[folder_list[0]]->_name = folder_list[0];
+        folder[folder_list[0]]->_parents = parent;
+    }
+    auto &temp = folder[folder_list[0]]->_children;
+    fill_folder_tree(temp,
+            vector<string>(folder_list.begin()+1, folder_list.end()),
+            parent += folder_list[0] + _separator);
+}
+
+void imap::retrieve_messages()
+{
+    callbacks_t cbs {
+        bind(&imap::parse_folder_details, this, placeholders::_1),
+        bind(&imap::parse_message_subjects, this, placeholders::_1)
+    };
+    for_each_folder(cbs);
+}
+
+void imap::parse_folder_details(boxes_cit box)
+{
+    string msg = msg_head() + " select " +
+                 box->second->_parents +
+                 box->second->_name +
+                 "\r\n";
+
+    string headers = _tcpclient.send_message(msg);
+
+    pcrecpp::RE regex(FOLDER_HEADER_REGEX,
+            pcrecpp::RE_Options()
+            .set_multiline(true)
+            .set_dotall(true)
+            .set_utf8(true));
+
+    string flags;
+    long long exists, recents;
+    if (!regex.FullMatch(headers, &flags, static_cast<void*>(NULL), &exists, &recents))
+        return;
+
+    box->second->_n_messages = exists;
+    box->second->_n_recents = recents;
+    box->second->_n_subfolders = box->second->_children.size();
+}
+
+void imap::parse_message_subjects(boxes_cit box)
+{
+    cout << "parse_message_subjects\n";
+    /*
+    string msg_messages = _tcpclient.send_message("a1 fetch 1:* BODY.PEEK[HEADER.FIELDS(SUBJECT)]\r\n");
+    */
+}
+
+void imap::for_each_folder(const callback_t &callback) const
+{
+    callbacks_t cbs { callback };
+    for_each_folder(cbs);
+}
+
+void imap::for_each_folder(callbacks_t &callback_list) const
+{
+    using b_it = boxes_t::const_iterator;
+    stack<b_it> tmp;
+    b_it it = _folders.cbegin(), child_it;
+    for ( ; it != _folders.cend(); ++it) {
+        tmp.emplace(it);
+
+        while (!tmp.empty()) {
+            b_it top = tmp.top();
+            tmp.pop();
+
+            for (const auto &cb : callback_list)
+                cb(top);
+
+            child_it = top->second->_children.cbegin();
+            for ( ; child_it != top->second->_children.cend(); ++child_it) {
+                tmp.emplace(child_it);
+            }
+        }
+    }
 }
 
 void imap::print_all(const boxes_t &parent, string tabs)
@@ -84,19 +177,6 @@ void imap::print_all(const boxes_t &parent, string tabs)
             tabs.pop_back();
         }
     }
-}
-
-void imap::fill_folders(boxes_t &parent, vector<string> folders)
-{
-    if (folders.empty())
-        return;
-
-    if (parent.find(folders[0]) == parent.end()) {
-        parent.emplace(make_pair(folders[0],
-                    unique_ptr<folder_t>(new folder_t)));
-    }
-    auto &temp = parent[folders[0]]->_children;
-    fill_folders(temp, vector<string>(folders.begin()+1, folders.end()));
 }
 
 string imap::get_header_by_folder(string &folder) const
@@ -118,6 +198,25 @@ void imap::finish_imap()
 
 }
 
+void parse(string hdr)
+{
+    pcrecpp::RE regex(FOLDER_HEADER_REGEX,
+            pcrecpp::RE_Options()
+            .set_multiline(true)
+            .set_dotall(true)
+            .set_utf8(true));
+
+    string flags;
+    long long exists, recent;
+    if (!regex.FullMatch(hdr, &flags, static_cast<void*>(NULL), &exists, &recent))
+        return;
+
+
+    cout << "Flags:" << flags << endl;
+    cout << "Exists: " << exists << endl;
+    cout << "Recent: " << recent << endl;
+}
+
 
 int main()
 {
@@ -132,9 +231,25 @@ int main()
 * LIST (\\HasNoChildren \\UnMarked) \".\" INBOX.Drafts\n\
 a1 OK List completed.\n";
 
+    string hdr = "* OK [CLOSED] Previous mailbox closed.\n\
+* FLAGS (\\Answered \\Flagged \\Deleted \\Seen \\Draft)\n\
+* OK [PERMANENTFLAGS (\\Answered \\Flagged \\Deleted \\Seen \\Draft \\*)] Flags permitted.\n\
+* 0 EXISTS\n\
+* 0 RECENT\n\
+* OK [UIDVALIDITY 1380434913] UIDs valid\n\
+* OK [UIDNEXT 46] Predicted next UID\n\
+* OK [HIGHESTMODSEQ 92] Highest\n\
+a10 OK [READ-WRITE] Select completed (0.000 secs).\n";
+
+    hdr = "* FLAGS (\\Answered \\Flagged \\Deleted \\Seen \\Draft $Forwarded NonJunk $label3)\r\n* OK [PERMANENTFLAGS (\\Answered \\Flagged \\Deleted \\Seen \\Draft $Forwarded NonJunk $label3 \\*)] Flags permitted.\r\n* 352 EXISTS\r\n* 0 RECENT\r\n* OK [UIDVALIDITY 1380434911] UIDs valid\r\n* OK [UIDNEXT 3712] Predicted next UID\r\n* OK [HIGHESTMODSEQ 6846] Highest\r\na2 OK [READ-WRITE] Select completed (0.000 secs).\r\n";
+    //parse(hdr);
+
+
+    //return 0;
     try {
         tcp_client tcp("192.168.122.55", "143");
         imap myimap(tcp);
+        cout << "folders: " << myimap << endl;
     }
     catch(const exception &e) {
         cerr << e.what() << endl;

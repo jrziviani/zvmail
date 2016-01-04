@@ -15,6 +15,7 @@
 // Copyright (C) 2015 Jose Ricardo Ziviani - zmvar:1,15
 
 #include "test_tcpclient.h"
+#include "test_imap.h"
 
 int main(int argc, char* argv[])
 {
