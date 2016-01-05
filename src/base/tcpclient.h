@@ -25,12 +25,15 @@ class tcp_client
 {
     public:
         tcp_client(std::string address, std::string port);
-        ~tcp_client();
+        virtual ~tcp_client();
 
-        std::string send_message(const std::string &msg) const;
+        virtual std::string send_message(const std::string &msg) const;
 
         tcp_client(const tcp_client &) = delete;
         tcp_client &operator=(const tcp_client &) = delete;
+
+    protected:
+        tcp_client();
 
     private:
         void init_socket();

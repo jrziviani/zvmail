@@ -32,4 +32,13 @@ AS_IF([test "$GTEST_DIR" != ""],
        echo -e "\tYou must pass GTEST_DIR=<dir> to compile testcases"])
 AM_CONDITIONAL([GOOGLE_TEST], [test "$GTEST_DIR" != ""])
 
+AC_ARG_VAR(GMOCK_DIR,
+           Google Mock Framework directory)
+
+AS_IF([test "$GMOCK_DIR" != ""],
+      [echo "Google Mock Framework found"],
+      [echo "Google Mock Framework not found"
+       echo -e "\tYou must pass GMOCK_DIR=<dir> to compile testcases"])
+AM_CONDITIONAL([GOOGLE_MOCK], [test "$GMOCK_DIR" != ""])
+
 AC_OUTPUT

@@ -16,6 +16,9 @@
 #
 # Copyright (C) 2015 Jose Ricardo Ziviani - zmvar:3,17
 
+export GTEST_DIR=/home/ziviani/ziviani/lab/googletest/googletest
+export GMOCK_DIR=/home/ziviani/ziviani/lab/googletest/googlemock
+
 printf "\e[4;34mUpdating configure and makefile\e[0m\n"
 autoreconf -vfi
 

@@ -50,7 +50,7 @@ void imap::retrieve_folders()
 {
     // request the list of folders for the current account to the imap
     // server and split the results in a vector
-    string msg_folders = _tcpclient.send_message(msg_head() +
+    string msg_folders = _tcpclient.send_message(msg_id() +
                                                  " list \"\" *\r\n");
     strings_t folder_list = zvmail::split(msg_folders);
 
@@ -106,7 +106,7 @@ void imap::retrieve_messages()
 
 void imap::parse_folder_details(boxes_cit box)
 {
-    string msg = msg_head() + " select " +
+    string msg = msg_id() + " select " +
                  box->second->_parents +
                  box->second->_name +
                  "\r\n";
@@ -139,11 +139,10 @@ void imap::parse_message_subjects(boxes_cit box)
 
 void imap::for_each_folder(const callback_t &callback) const
 {
-    callbacks_t cbs { callback };
-    for_each_folder(cbs);
+    for_each_folder(callbacks_t{callback});
 }
 
-void imap::for_each_folder(callbacks_t &callback_list) const
+void imap::for_each_folder(const callbacks_t &callback_list) const
 {
     using b_it = boxes_t::const_iterator;
     stack<b_it> tmp;
@@ -188,9 +187,10 @@ string imap::get_header_by_folder(string &folder) const
 
 void imap::init_imap()
 {
-    string result = _tcpclient.send_message("a1 login test test\r\n");
-    if (result.find("AUTHENTICATIONFAILED") != string::npos)
-        throw runtime_error("IMAP Authentication failed");
+    string id = msg_id();
+    string result = _tcpclient.send_message(id + " login test test\r\n");
+    if (result.find(id + " OK") == string::npos)
+        throw runtime_error("IMAP authentication failed");
 }
 
 void imap::finish_imap()
@@ -217,7 +217,7 @@ void parse(string hdr)
     cout << "Recent: " << recent << endl;
 }
 
-
+/*
 int main()
 {
     string tmp = "* LIST (\\HasChildren) \".\" INBOX\n\
@@ -256,4 +256,4 @@ a10 OK [READ-WRITE] Select completed (0.000 secs).\n";
         return 1;
     }
     return 0;
-}
+}*/

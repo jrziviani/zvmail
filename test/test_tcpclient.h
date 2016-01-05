@@ -14,6 +14,9 @@
 //
 // Copyright (C) 2015 Jose Ricardo Ziviani - zmvar:1,15
 
+#ifndef _TEST_TCPCLIENT_H
+#define _TEST_TCPCLIENT_H
+
 #include <gtest/gtest.h>
 #include <string>
 #include <exception>
@@ -37,7 +40,18 @@ TEST(tcp_client, http_response)
     EXPECT_EQ(response.substr(0, 15), std::string("HTTP/1.1 200 OK"));
 }
 
-TEST(tcp_client, timeout)
+TEST(tcp_client, connection_refused)
+{
+    EXPECT_THROW(tcp_client("ziviani.net", "8080"),
+            std::runtime_error);
+    try {
+        tcp_client("ziviani.net", "8080");
+    } catch (const std::runtime_error &e) {
+        EXPECT_STREQ(e.what(), "Connection refused");
+    }
+}
+/*
+TEST(tcp_client, connection_timeout)
 {
     tcp_client tcp("ziviani.net", "80");
     EXPECT_THROW(tcp.send_message("GET / HTTP/1.1"),
@@ -49,6 +63,7 @@ TEST(tcp_client, timeout)
         EXPECT_STREQ(e.what(), "Resource temporarily unavailable");
     }
 }
+*/
 TEST(tcp_client, https_response)
 {
     tcp_client tcp("twitter.com", "443");
@@ -60,3 +75,5 @@ TEST(tcp_client, https_response)
     EXPECT_LT(0, response.size());
     EXPECT_EQ(response.substr(0, 15), std::string("HTTP/1.1 200 OK"));
 }
+
+#endif

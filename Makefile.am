@@ -13,7 +13,8 @@ zvmail_CXXFLAGS = -std=c++11 \
 				  -Werror
 zvmail_SOURCES = src/base/tcpclient.cpp \
 				 src/base/imap.cpp \
-				 src/utils/utils.cpp
+				 src/utils/utils.cpp \
+				 src/main.cpp
 zvmail_CFLAGS = $(SSL_CFLAGS) \
 				$(PCRE_CFLAGS)
 zvmail_LDADD = $(SSL_LIBS) \
@@ -25,17 +26,17 @@ test_zvmail_CXXFLAGS = -std=c++11 \
 					   -O0 \
 					   -g3 \
 					   -pthread \
-					   -isystem \
 					   -Wall \
-					   -Werror
-					   $(GTEST_DIR)/include
+					   -Werror \
+					   -isystem $(GTEST_DIR)/include \
+					   -isystem $(GMOCK_DIR)/include
 test_zvmail_SOURCES = test/main.cpp \
 					  src/base/tcpclient.cpp \
-					  #src/base/imap.cpp \
+					  src/base/imap.cpp \
 					  src/utils/utils.cpp
 test_zvmail_CFLAGS = $(SSL_CFLAGS) \
 					 $(PCRE_CFLAGS)
-test_zvmail_LDADD = test/libgtest.a \
+test_zvmail_LDADD = test/libgmock.a \
 					$(SSL_LIBS) \
 					$(PCRE_LIBS)
 
@@ -44,13 +45,16 @@ check: test_zvmail
 	@echo "Running test cases..."
 	@./test_zvmail
 
-test/libgtest.a:
+test/libgmock.a:
 	@echo "Building Google Test Framework..."
-	@g++ -isystem -pthread \
-		-I$(GTEST_DIR) \
-		-c $(GTEST_DIR)/src/gtest-all.cc
-	@ar -rv test/libgtest.a gtest-all.o > /dev/null 2>&1
-	@rm gtest-all.o
+	@g++ -isystem ${GTEST_DIR}/include -I${GTEST_DIR} \
+		-isystem ${GMOCK_DIR}/include -I${GMOCK_DIR} \
+		-pthread -c $(GTEST_DIR)/src/gtest-all.cc
+	@g++ -isystem ${GTEST_DIR}/include -I${GTEST_DIR} \
+		-isystem ${GMOCK_DIR}/include -I${GMOCK_DIR} \
+		-pthread -c $(GMOCK_DIR)/src/gmock-all.cc
+	@ar -rc test/libgmock.a gtest-all.o gmock-all.o
+	@rm gtest-all.o gmock-all.o
 
 endif
 

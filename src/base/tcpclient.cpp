@@ -43,6 +43,11 @@ tcp_client::tcp_client(string address, string port)
     }
 }
 
+tcp_client::tcp_client()
+    : _ssl(NULL), _socket(0), _address(""), _port(""), _is_secure(false)
+{
+}
+
 tcp_client::~tcp_client()
 {
     if (_is_secure) {
@@ -50,7 +55,9 @@ tcp_client::~tcp_client()
             SSL_shutdown(_ssl);
         SSL_free(_ssl);
     }
-    close(_socket);
+
+    if (_socket)
+        close(_socket);
 }
 
 void tcp_client::init_socket()

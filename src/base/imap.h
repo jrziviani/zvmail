@@ -66,7 +66,7 @@ class imap
         void print_all(const boxes_t &parent, std::string tabs = "");
 
     private:
-        std::string msg_head(bool generate_new = true);
+        std::string msg_id(bool generate_new = true);
 
         void init_imap();
         void finish_imap();
@@ -78,7 +78,7 @@ class imap
                           std::string parent = "");
 
         void for_each_folder(const callback_t &callback) const;
-        void for_each_folder(callbacks_t &callback_list) const;
+        void for_each_folder(const callbacks_t &callback_list) const;
 
         // callbacks
         void parse_folder_details(boxes_cit box);
@@ -93,7 +93,7 @@ class imap
         int _counter;
 };
 
-std::string imap::msg_head(bool generate_new)
+inline std::string imap::msg_id(bool generate_new)
 {
     if (generate_new)
         return "a" + std::to_string(++_counter);
@@ -101,7 +101,7 @@ std::string imap::msg_head(bool generate_new)
     return "a" + std::to_string(_counter);
 }
 
-std::ostream &operator<<(std::ostream &os, const imap &imap_obj)
+inline std::ostream &operator<<(std::ostream &os, const imap &imap_obj)
 {
     imap_obj.for_each_folder([&os](imap::boxes_cit box) {
             os << box->first << ": " << box->second->_parents << "\n";
