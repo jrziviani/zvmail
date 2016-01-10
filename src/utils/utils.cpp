@@ -38,7 +38,9 @@ vector<string> zvmail::split(const string &text, char delim) noexcept
         offset = string::npos;
     }
 
-    if (i == text.size() && i == start + offset)
+    if (i == text.size()
+            && i == start + offset
+            && offset > 0)
         strs.emplace_back(text.substr(start, offset));
     return strs;
 }

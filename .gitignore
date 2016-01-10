@@ -13,3 +13,6 @@ libgtest.a
 .deps
 .ctags
 *.o
+Makefile.in
+configure
+*.a

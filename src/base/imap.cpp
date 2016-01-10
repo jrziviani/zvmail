@@ -27,15 +27,18 @@
 using namespace std;
 
 // constants ------------------------------------------------------------------
-const char FOLDER_REGEX[] = R"(\* LIST \(((\\\w+\s?)+)\) \"(.)\" (.+))";
+//const char FOLDER_REGEX[] = R"(\* LIST \(((\\\w+\s?)+)\) \"(.)\" (.+))";
+const char FOLDER_REGEX[] = R"(\s?\* LIST \(((\\|\$?[a-zA-Z0-9]+\s?)+)\) \"(.)\" (.+))";
 
+//const char FOLDER_HEADER_REGEX[] = R"(.*\* FLAGS\s?\(((\\|\$?[a-zA-Z0-9]+\s?)+).*\*\s?([0-9]+)\s?EXISTS.*\*\s?([0-9]+)\s?RECENT.*a[0-9]+\sOK.*)";
 const char FOLDER_HEADER_REGEX[] = R"(.*\* FLAGS\s?\(((\\|\$?[a-zA-Z0-9]+\s?)+).*\*\s?([0-9]+)\s?EXISTS.*\*\s?([0-9]+)\s?RECENT.*a[0-9]+\sOK.*)";
+
 
 // implementation -------------------------------------------------------------
 imap::imap(const tcp_client &tcp) :
     _tcpclient(tcp), _counter(0)
 {
-    init_imap();
+    authenticate();
     retrieve_folders();
     retrieve_messages();
 }
@@ -44,6 +47,15 @@ imap::~imap()
 {
     cout << _tcpclient.send_message("a1 close\r\n") << endl;
     cout << _tcpclient.send_message("a1 logout\r\n") << endl;
+}
+
+void imap::authenticate()
+{
+    //TODO: use user/pass provided from stdin
+    string id = msg_id();
+    string result = _tcpclient.send_message(id + " login test test\r\n");
+    if (result.find(id + " OK") == string::npos)
+        throw runtime_error("IMAP authentication failed");
 }
 
 void imap::retrieve_folders()
@@ -88,6 +100,10 @@ void imap::fill_folder_tree(boxes_t &folder,
                     unique_ptr<folder_t>(new folder_t)));
         folder[folder_list[0]]->_name = folder_list[0];
         folder[folder_list[0]]->_parents = parent;
+        folder[folder_list[0]]->_n_messages = 0;
+        folder[folder_list[0]]->_n_recents = 0;
+        folder[folder_list[0]]->_n_unreads = 0;
+        folder[folder_list[0]]->_n_subfolders = 0;
     }
     auto &temp = folder[folder_list[0]]->_children;
     fill_folder_tree(temp,
@@ -131,8 +147,8 @@ void imap::parse_folder_details(boxes_cit box)
 
 void imap::parse_message_subjects(boxes_cit box)
 {
-    cout << "parse_message_subjects\n";
     /*
+    cout << "parse_message_subjects\n";
     string msg_messages = _tcpclient.send_message("a1 fetch 1:* BODY.PEEK[HEADER.FIELDS(SUBJECT)]\r\n");
     */
 }
@@ -185,13 +201,6 @@ string imap::get_header_by_folder(string &folder) const
     return ret;
 }
 
-void imap::init_imap()
-{
-    string id = msg_id();
-    string result = _tcpclient.send_message(id + " login test test\r\n");
-    if (result.find(id + " OK") == string::npos)
-        throw runtime_error("IMAP authentication failed");
-}
 
 void imap::finish_imap()
 {

@@ -27,7 +27,7 @@
 
 class imap
 {
-    struct message_t // 20 bytes
+    struct message_t
     {
         int _id;
         std::string _timestamp;
@@ -46,7 +46,8 @@ class imap
         std::string _name;
         std::string _parents;
         std::vector<message_t> _messages;
-        std::unordered_map<std::string, std::unique_ptr<folder_t>> _children;
+        std::unordered_map<std::string,
+            std::unique_ptr<folder_t>> _children;
     };
 
     // aliases
@@ -61,14 +62,13 @@ class imap
         imap(const tcp_client &tcp);
         ~imap();
 
-        //folder_t get_folders() const;
         std::string get_header_by_folder(std::string &folder) const;
         void print_all(const boxes_t &parent, std::string tabs = "");
 
-    private:
         std::string msg_id(bool generate_new = true);
+    private:
 
-        void init_imap();
+        void authenticate();
         void finish_imap();
 
         void retrieve_messages();
@@ -83,6 +83,7 @@ class imap
         // callbacks
         void parse_folder_details(boxes_cit box);
         void parse_message_subjects(boxes_cit box);
+        void parse_authentication();
 
         friend std::ostream &operator<<(std::ostream &os, const imap &imap_obj);
 
