@@ -23,6 +23,11 @@ PKG_CHECK_MODULES(PCRE, libpcrecpp >= 8.31,
                   [echo "libpcre3-dev >= 8.31 is required"
                    exit -1])
 
+PKG_CHECK_MODULES(SASL, libgsasl >= 1.8,
+                  [],
+                  [echo "libgsasl7-dev >= 1.8 is required"
+                   exit -1])
+
 AC_ARG_VAR(GTEST_DIR,
            Google Test Framework directory)
 

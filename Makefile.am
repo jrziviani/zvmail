@@ -16,9 +16,11 @@ zvmail_SOURCES = src/base/tcpclient.cpp \
 				 src/utils/utils.cpp \
 				 src/main.cpp
 zvmail_CFLAGS = $(SSL_CFLAGS) \
-				$(PCRE_CFLAGS)
+				$(PCRE_CFLAGS) \
+				$(SASL_CFLAGS)
 zvmail_LDADD = $(SSL_LIBS) \
-			   $(PCRE_LIBS)
+			   $(PCRE_LIBS) \
+			   $(SASL_LIBS)
 
 if GOOGLE_TEST
 # Test program ============================================
@@ -35,10 +37,12 @@ test_zvmail_SOURCES = test/main.cpp \
 					  src/base/imap.cpp \
 					  src/utils/utils.cpp
 test_zvmail_CFLAGS = $(SSL_CFLAGS) \
-					 $(PCRE_CFLAGS)
+					 $(PCRE_CFLAGS) \
+					 $(SASL_CFLAGS)
 test_zvmail_LDADD = test/libgmock.a \
 					$(SSL_LIBS) \
-					$(PCRE_LIBS)
+					$(PCRE_LIBS) \
+					$(SASL_LIBS)
 
 # Custom targets ==========================================
 check: test_zvmail
@@ -62,7 +66,7 @@ endif
 ctags: zvmail
 	@echo "generating ctags..."
 	find . \( -name \*.cpp -o -name \*.h \) \
-		| xargs g++ -std=c++11 -M -I $(SSL_CFLAGS) $(PCRE_CFLAGS) . \
+		| xargs g++ -std=c++11 -M -I $(SSL_CFLAGS) $(PCRE_CFLAGS) $(SASL_CFLAGS) . \
 		| sed -e 's/[\\ ]/\n/g' | sed -e '/^$$/d' -e '/\.o:[ \t]*$$/d' \
 		| ctags -V -f .ctags --c++-kinds=+p --fields=+iaS \
 	   	--extra=+q -L - --language-force=c++ --exclude='.git'
