@@ -62,10 +62,6 @@ class imap
         imap(const tcp_client &tcp);
         ~imap();
 
-        std::string get_header_by_folder(std::string &folder) const;
-        void print_all(const boxes_t &parent, std::string tabs = "");
-
-        std::string msg_id(bool generate_new = true);
     private:
 
         void authenticate();
@@ -79,6 +75,8 @@ class imap
 
         void for_each_folder(const callback_t &callback) const;
         void for_each_folder(const callbacks_t &callback_list) const;
+
+        std::string msg_id(bool generate_new = true);
 
         // callbacks
         void parse_folder_details(boxes_cit box);

@@ -16,8 +16,14 @@
 
 #include "utils.h"
 #include <iostream>
-using namespace std;
 
+
+// namespace members ----------------------------------------------------------
+using std::string;
+using std::vector;
+
+
+// implementation -------------------------------------------------------------
 vector<string> zvmail::split(const string &text, char delim) noexcept
 {
     vector<string> strs = {};
@@ -72,13 +78,3 @@ std::unique_ptr<T> zvmail::make_unique(Ts&&... params)
 {
     return std::unique_ptr<T>(new T(std::forward<Ts>(params)...));
 }
-
-/*
-int main()
-{
-    using namespace zvmail;
-    auto st = string("This is a test");
-    cout << rstrip(st, "est") << endl;
-    return 0;
-}
-*/

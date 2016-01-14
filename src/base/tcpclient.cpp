@@ -28,11 +28,17 @@
 
 #include <iostream>
 
-using namespace std;
+// namespace members ----------------------------------------------------------
+using std::string;
+using std::runtime_error;
 
+
+// constants ------------------------------------------------------------------
 const ssize_t BUFFER_SIZE = 1024;
 const long TIMEOUT = 3;
 
+
+// implementation -------------------------------------------------------------
 tcp_client::tcp_client(string address, string port)
     : _ssl(NULL), _socket(0), _address(address), _port(port), _is_secure(false)
 {

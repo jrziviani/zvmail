@@ -24,14 +24,23 @@
 
 #include <pcrecpp.h>
 
-using namespace std;
+
+// namespace members ----------------------------------------------------------
+using std::endl;
+using std::cout;
+using std::stack;
+using std::vector;
+using std::unique_ptr;
+using std::runtime_error;
+using std::placeholders::_1;
+
 
 // constants ------------------------------------------------------------------
-//const char FOLDER_REGEX[] = R"(\* LIST \(((\\\w+\s?)+)\) \"(.)\" (.+))";
-const char FOLDER_REGEX[] = R"(\s?\* LIST \(((\\|\$?[a-zA-Z0-9]+\s?)+)\) \"(.)\" (.+))";
+const char FOLDER_REGEX[] = R"(\s?\* LIST \(((\\|\$?[a-zA-Z0-9]+\s?)+)\) \
+\"(.)\" (.+))";
 
-//const char FOLDER_HEADER_REGEX[] = R"(.*\* FLAGS\s?\(((\\|\$?[a-zA-Z0-9]+\s?)+).*\*\s?([0-9]+)\s?EXISTS.*\*\s?([0-9]+)\s?RECENT.*a[0-9]+\sOK.*)";
-const char FOLDER_HEADER_REGEX[] = R"(.*\* FLAGS\s?\(((\\|\$?[a-zA-Z0-9]+\s?)+).*\*\s?([0-9]+)\s?EXISTS.*\*\s?([0-9]+)\s?RECENT.*a[0-9]+\sOK.*)";
+const char FOLDER_HEADER_REGEX[] = R"(.*\* FLAGS\s?\(((\\|\$?[a-zA-Z0-9]+\s?)\
++).*\*\s?([0-9]+)\s?EXISTS.*\*\s?([0-9]+)\s?RECENT.*a[0-9]+\sOK.*)";
 
 
 // implementation -------------------------------------------------------------
@@ -45,8 +54,8 @@ imap::imap(const tcp_client &tcp) :
 
 imap::~imap()
 {
-    cout << _tcpclient.send_message("a1 close\r\n") << endl;
-    cout << _tcpclient.send_message("a1 logout\r\n") << endl;
+    cout << _tcpclient.send_message(msg_id() + " close\r\n") << endl;
+    cout << _tcpclient.send_message(msg_id() + " logout\r\n") << endl;
 }
 
 void imap::authenticate()
@@ -66,12 +75,16 @@ void imap::retrieve_folders()
                                                  " list \"\" *\r\n");
     strings_t folder_list = zvmail::split(msg_folders);
 
-    // extract the required data from the imap response and starting
-    // filling the folder data structure with folders name
+    // create the regex object to match every folder listed in the imap
+    // response
     pcrecpp::RE regex(FOLDER_REGEX,
             pcrecpp::RE_Options()
             .set_utf8(true));
 
+    // for each folder receveied, extract all details and fill up the
+    // data structure with all names found
+    // TODO: it is not currently using the flags extracted from the imap
+    // response
     string flags, folder_name, separator;
     for (const auto &folder : folder_list) {
         if (!regex.FullMatch(folder,
@@ -81,20 +94,40 @@ void imap::retrieve_folders()
                     &folder_name))
             continue;
 
-        _separator = separator[0];
-        vector<string> folders = zvmail::split(zvmail::rstrip(folder_name),
+        // split the folder path in a vector and create each as nodes
+        // in _folder structure:
+        // inbox/received/test -> folders[0]: inbox
+        //                        folders[1]: received
+        //                        folders[2]: test
+        vector<string> folders = zvmail::split(
+                zvmail::rstrip(folder_name),
                 separator[0]);
         fill_folder_tree(_folders, folders);
     }
+
+    // let the object know how the imap server separates the path
+    // (usually they use / or .)
+    _separator = separator[0];
 }
 
 void imap::fill_folder_tree(boxes_t &folder,
         strings_t folder_list,
         string parent)
 {
+    // TODO: create a more intelligent approach to skip existing
+    // folders instead of opening it recursively or even make it
+    // iterative like for_each_folder()
     if (folder_list.empty())
         return;
 
+    // create the folder in the struct if it does not exist yet
+    //   '_parents' is a string with the formated path until this
+    //              current folder, for example:
+    //              for folder 'inbox', _parents = ""
+    //                      'received', _parents = "inbox"
+    //                          'test', _parents = "inbox/received"
+    //              this is to make it easier when requesting data
+    //              for a particular folder
     if (folder.find(folder_list[0]) == folder.end()) {
         folder.emplace(make_pair(folder_list[0],
                     unique_ptr<folder_t>(new folder_t)));
@@ -105,17 +138,20 @@ void imap::fill_folder_tree(boxes_t &folder,
         folder[folder_list[0]]->_n_unreads = 0;
         folder[folder_list[0]]->_n_subfolders = 0;
     }
+
+    // call this method recursively to add the remaining folders in
+    // the _folders struct
     auto &temp = folder[folder_list[0]]->_children;
     fill_folder_tree(temp,
-            vector<string>(folder_list.begin()+1, folder_list.end()),
+            vector<string>(folder_list.begin() + 1, folder_list.end()),
             parent += folder_list[0] + _separator);
 }
 
 void imap::retrieve_messages()
 {
     callbacks_t cbs {
-        bind(&imap::parse_folder_details, this, placeholders::_1),
-        bind(&imap::parse_message_subjects, this, placeholders::_1)
+        bind(&imap::parse_folder_details, this, _1),
+        bind(&imap::parse_message_subjects, this, _1)
     };
     for_each_folder(cbs);
 }
@@ -155,6 +191,7 @@ void imap::parse_message_subjects(boxes_cit box)
 
 void imap::for_each_folder(const callback_t &callback) const
 {
+    // handy method for callers with only one callback
     for_each_folder(callbacks_t{callback});
 }
 
@@ -162,6 +199,13 @@ void imap::for_each_folder(const callbacks_t &callback_list) const
 {
     using b_it = boxes_t::const_iterator;
     stack<b_it> tmp;
+
+    // basically a DFS through the folders, each folder calls all
+    // the callbacks interested to receive a const iterator of the
+    // current folder, note that boxes_t is an unordered map (hash table)
+    // of <string, unique_ptr<message_t>>, it means that such pair is
+    // imutable but the content of the value (message_t) is perfectly
+    // mutable
     b_it it = _folders.cbegin(), child_it;
     for ( ; it != _folders.cend(); ++it) {
         tmp.emplace(it);
@@ -181,49 +225,9 @@ void imap::for_each_folder(const callbacks_t &callback_list) const
     }
 }
 
-void imap::print_all(const boxes_t &parent, string tabs)
-{
-    for (const auto &it : parent) {
-        cout << tabs << it.first << endl;
-
-        if (!it.second->_children.empty()) {
-            tabs.push_back('\t');
-            print_all(it.second->_children, tabs);
-            tabs.pop_back();
-        }
-    }
-}
-
-string imap::get_header_by_folder(string &folder) const
-{
-    string ret;
-
-    return ret;
-}
-
-
 void imap::finish_imap()
 {
 
-}
-
-void parse(string hdr)
-{
-    pcrecpp::RE regex(FOLDER_HEADER_REGEX,
-            pcrecpp::RE_Options()
-            .set_multiline(true)
-            .set_dotall(true)
-            .set_utf8(true));
-
-    string flags;
-    long long exists, recent;
-    if (!regex.FullMatch(hdr, &flags, static_cast<void*>(NULL), &exists, &recent))
-        return;
-
-
-    cout << "Flags:" << flags << endl;
-    cout << "Exists: " << exists << endl;
-    cout << "Recent: " << recent << endl;
 }
 
 /*
