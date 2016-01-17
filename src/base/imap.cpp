@@ -27,7 +27,7 @@
 
 // namespace members ----------------------------------------------------------
 using std::endl;
-using std::cout;
+//using std::cout;
 using std::stack;
 using std::vector;
 using std::unique_ptr;
@@ -36,12 +36,9 @@ using std::placeholders::_1;
 
 
 // constants ------------------------------------------------------------------
-const char FOLDER_REGEX[] = R"(\s?\* LIST \(((\\|\$?[a-zA-Z0-9]+\s?)+)\) \
-\"(.)\" (.+))";
+const char FOLDER_REGEX[] = R"(\s?\* LIST \(((\\|\$?[a-zA-Z0-9]+\s?)+)\) \"(.)\" (.+))";
 
-const char FOLDER_HEADER_REGEX[] = R"(.*\* FLAGS\s?\(((\\|\$?[a-zA-Z0-9]+\s?)\
-+).*\*\s?([0-9]+)\s?EXISTS.*\*\s?([0-9]+)\s?RECENT.*a[0-9]+\sOK.*)";
-
+const char FOLDER_HEADER_REGEX[] = R"(.*\* FLAGS\s?\(((\\|\$?[a-zA-Z0-9]+\s?)+).*\*\s?([0-9]+)\s?EXISTS.*\*\s?([0-9]+)\s?RECENT.*a[0-9]+\sOK.*)";
 
 // implementation -------------------------------------------------------------
 imap::imap(const tcp_client &tcp) :
@@ -54,8 +51,8 @@ imap::imap(const tcp_client &tcp) :
 
 imap::~imap()
 {
-    cout << _tcpclient.send_message(msg_id() + " close\r\n") << endl;
-    cout << _tcpclient.send_message(msg_id() + " logout\r\n") << endl;
+    _tcpclient.send_message(msg_id() + " close\r\n");
+    _tcpclient.send_message(msg_id() + " logout\r\n");
 }
 
 void imap::authenticate()
@@ -187,6 +184,8 @@ void imap::parse_message_subjects(boxes_cit box)
     cout << "parse_message_subjects\n";
     string msg_messages = _tcpclient.send_message("a1 fetch 1:* BODY.PEEK[HEADER.FIELDS(SUBJECT)]\r\n");
     */
+//    string msg = msg_id() + " fetch " +
+//                 box->second->
 }
 
 void imap::for_each_folder(const callback_t &callback) const
