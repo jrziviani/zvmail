@@ -16,3 +16,4 @@ libgtest.a
 Makefile.in
 configure
 *.a
+logger
