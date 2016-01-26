@@ -14,7 +14,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# Copyright (C) 2015 Jose Ricardo Ziviani - zmvar:3,17
+# Copyright (C) 2015-2016 Jose Ricardo Ziviani - zmvar:3,17
 
 export GTEST_DIR=/home/ziviani/ziviani/lab/googletest/googletest
 export GMOCK_DIR=/home/ziviani/ziviani/lab/googletest/googlemock
