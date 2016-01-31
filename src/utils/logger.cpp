@@ -16,7 +16,6 @@
 
 #include "logger.h"
 
-#include <fstream>
 #include <iostream>
 #include <thread>
 #include <functional>
@@ -44,72 +43,12 @@ logger::~logger()
 {
 }
 
-template<typename T>
-void logger::log(const T &msg)
-{
-    _output << msg << "\n";
-}
-
-template<typename T, typename... Ts>
-void logger::log(const T &msg, const Ts&... msgs)
-{
-    _output << msg << " ";
-    log(msgs...);
-}
-
-template<typename... Ts>
-void logger::debug(const Ts&... msgs)
-{
-#ifdef DEBUG
-    _outmutex.lock();
-    _output << "DEBUG - ";
-    log(msgs...);
-    _outmutex.unlock();
-#endif
-}
-
-template<typename... Ts>
-void logger::info(const Ts&... msgs)
-{
-    _outmutex.lock();
-    _output << "INFO - ";
-    log(msgs...);
-    _outmutex.unlock();
-}
-
-template<typename... Ts>
-void logger::warn(const Ts&... msgs)
-{
-    _outmutex.lock();
-    _output << "WARN - ";
-    log(msgs...);
-    _outmutex.unlock();
-}
-
-template<typename... Ts>
-void logger::error(const Ts&... msgs)
-{
-    _outmutex.lock();
-    _output << "ERROR - ";
-    log(msgs...);
-    _outmutex.unlock();
-}
-
-template<typename... Ts>
-void logger::critical(const Ts&... msgs)
-{
-    _outmutex.lock();
-    _output << "CRITICAL - ";
-    log(msgs...);
-    _outmutex.unlock();
-}
-
 void logging(logger &log, unsigned int id)
 {
     log.warn("[thread ", id, "]: warn");
     log.error("[thread ", id, "]: error");
 }
-
+/*
 int main()
 {
     //logger log("/tmp/zvmail.log");
@@ -126,3 +65,4 @@ int main()
 
     return 0;
 }
+*/

@@ -31,26 +31,66 @@ class logger
         ~logger();
 
         template<typename... Ts>
-        void debug(const Ts&... msgs);
+        void debug(const Ts&... msgs)
+        {
+#ifdef DEBUG
+            _outmutex.lock();
+            _output << "DEBUG - ";
+            log(msgs...);
+            _outmutex.unlock();
+#endif
+        }
 
         template<typename... Ts>
-        void info(const Ts&... msgs);
+        void info(const Ts&... msgs)
+        {
+            _outmutex.lock();
+            _output << "INFO - ";
+            log(msgs...);
+            _outmutex.unlock();
+        }
 
         template<typename... Ts>
-        void warn(const Ts&... msgs);
+        void warn(const Ts&... msgs)
+        {
+            _outmutex.lock();
+            _output << "WARN - ";
+            log(msgs...);
+            _outmutex.unlock();
+        }
 
         template<typename... Ts>
-        void error(const Ts&... msgs);
+        void error(const Ts&... msgs)
+        {
+            _outmutex.lock();
+            _output << "ERROR - ";
+            log(msgs...);
+            _outmutex.unlock();
+        }
 
         template<typename... Ts>
-        void critical(const Ts&... msgs);
+        void critical(const Ts&... msgs)
+        {
+            _outmutex.lock();
+            _output << "CRITICAL - ";
+            log(msgs...);
+            _outmutex.unlock();
+        }
 
     private:
         template<typename T>
-        void log(const T &msg);
+        void log(const T &msg)
+        {
+            _output << msg << "\n";
+            _output.flush();
+        }
 
         template<typename T, typename... Ts>
-        void log(const T &msg, const Ts&... msgs);
+        void log(const T &msg, const Ts&... msgs)
+        {
+            _output << msg << " ";
+            log(msgs...);
+        }
 
     private:
         std::ofstream _outfile;
