@@ -27,22 +27,22 @@
 
 // namespace members ----------------------------------------------------------
 using std::endl;
-//using std::cout;
+using std::cout;
 using std::stack;
 using std::vector;
 using std::unique_ptr;
 using std::runtime_error;
 using std::placeholders::_1;
+using std::to_string;
 
 
 // constants ------------------------------------------------------------------
 const char FOLDER_REGEX[] = R"(\s?\* LIST \(((\\|\$?[a-zA-Z0-9]+\s?)+)\) \"(.)\" (.+))";
-
 const char FOLDER_HEADER_REGEX[] = R"(.*\* FLAGS\s?\(((\\|\$?[a-zA-Z0-9]+\s?)+).*\*\s?([0-9]+)\s?EXISTS.*\*\s?([0-9]+)\s?RECENT.*a[0-9]+\sOK.*)";
 
 // implementation -------------------------------------------------------------
-imap::imap(const tcp_client &tcp) :
-    _tcpclient(tcp), _counter(0)
+imap::imap(const tcp_client &tcp, logger &log) :
+    _tcpclient(tcp), _counter(0), _logger(log)
 {
     authenticate();
     retrieve_folders();
@@ -57,11 +57,14 @@ imap::~imap()
 
 void imap::authenticate()
 {
+    _logger.info("Authenticating ,", "userid", " in ", "tcp server");
     //TODO: use user/pass provided from stdin
     string id = msg_id();
     string result = _tcpclient.send_message(id + " login test test\r\n");
-    if (result.find(id + " OK") == string::npos)
+    if (result.find(id + " OK") == string::npos) {
+        _logger.critical("User has not permission");
         throw runtime_error("IMAP authentication failed");
+    }
 }
 
 void imap::retrieve_folders()
@@ -70,6 +73,8 @@ void imap::retrieve_folders()
     // server and split the results in a vector
     string msg_folders = _tcpclient.send_message(msg_id() +
                                                  " list \"\" *\r\n");
+
+    _logger.debug("folders received:", msg_folders);
     strings_t folder_list = zvmail::split(msg_folders);
 
     // create the regex object to match every folder listed in the imap
@@ -91,6 +96,9 @@ void imap::retrieve_folders()
                     &folder_name))
             continue;
 
+        _logger.debug("folders considered:", folder);
+        _separator = separator[0];
+
         // split the folder path in a vector and create each as nodes
         // in _folder structure:
         // inbox/received/test -> folders[0]: inbox
@@ -101,10 +109,6 @@ void imap::retrieve_folders()
                 separator[0]);
         fill_folder_tree(_folders, folders);
     }
-
-    // let the object know how the imap server separates the path
-    // (usually they use / or .)
-    _separator = separator[0];
 }
 
 void imap::fill_folder_tree(boxes_t &folder,
@@ -159,8 +163,10 @@ void imap::parse_folder_details(boxes_cit box)
                  box->second->_parents +
                  box->second->_name +
                  "\r\n";
+    _logger.debug("Folder details:", msg);
 
     string headers = _tcpclient.send_message(msg);
+    _logger.debug("Folder response:", headers);
 
     pcrecpp::RE regex(FOLDER_HEADER_REGEX,
             pcrecpp::RE_Options()
@@ -176,16 +182,15 @@ void imap::parse_folder_details(boxes_cit box)
     box->second->_n_messages = exists;
     box->second->_n_recents = recents;
     box->second->_n_subfolders = box->second->_children.size();
+    cout << box->second->_name << ": " << box->second->_n_messages << "\n";
 }
 
 void imap::parse_message_subjects(boxes_cit box)
 {
-    /*
-    cout << "parse_message_subjects\n";
-    string msg_messages = _tcpclient.send_message("a1 fetch 1:* BODY.PEEK[HEADER.FIELDS(SUBJECT)]\r\n");
-    */
-//    string msg = msg_id() + " fetch " +
-//                 box->second->
+    string msg_message = _tcpclient.send_message(msg_id() +
+        " fetch 1:* (FLAGS BODY.PEEK[HEADER.FIELDS (DATE FROM SUBJECT)])\r\n");
+
+    cout << msg_message << "\n";
 }
 
 void imap::for_each_folder(const callback_t &callback) const
@@ -259,13 +264,15 @@ a10 OK [READ-WRITE] Select completed (0.000 secs).\n";
 
     //return 0;
     try {
-        tcp_client tcp("192.168.122.55", "143");
+        //tcp_client tcp("192.168.122.55", "143");
+        tcp_client tcp("imap.ziviani.net", "143");
         imap myimap(tcp);
         cout << "folders: " << myimap << endl;
     }
-    catch(const exception &e) {
-        cerr << e.what() << endl;
+    catch(const std::exception &e) {
+        std::cerr << e.what() << endl;
         return 1;
     }
     return 0;
-}*/
+}
+*/

@@ -39,8 +39,9 @@ const long TIMEOUT = 3;
 
 
 // implementation -------------------------------------------------------------
-tcp_client::tcp_client(string address, string port)
-    : _ssl(NULL), _socket(0), _address(address), _port(port), _is_secure(false)
+tcp_client::tcp_client(string address, string port, logger &log)
+    : _ssl(NULL), _socket(0), _address(address), _port(port),
+    _is_secure(false), _logger(log)
 {
     init_socket();
     if (port == "443" || port == "993") {
@@ -49,8 +50,9 @@ tcp_client::tcp_client(string address, string port)
     }
 }
 
-tcp_client::tcp_client()
-    : _ssl(NULL), _socket(0), _address(""), _port(""), _is_secure(false)
+tcp_client::tcp_client(logger &log)
+    : _ssl(NULL), _socket(0), _address(""), _port(""),
+    _is_secure(false), _logger(log)
 {
 }
 

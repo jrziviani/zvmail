@@ -19,12 +19,14 @@
 
 #include <openssl/ssl.h>
 
+#include "src/utils/logger.h"
+
 #include <string>
 
 class tcp_client
 {
     public:
-        tcp_client(std::string address, std::string port);
+        tcp_client(std::string address, std::string port, logger &log);
         virtual ~tcp_client();
 
         virtual std::string send_message(const std::string &msg) const;
@@ -33,7 +35,7 @@ class tcp_client
         tcp_client &operator=(const tcp_client &) = delete;
 
     protected:
-        tcp_client();
+        tcp_client(logger &log);
 
     private:
         void init_socket();
@@ -47,6 +49,7 @@ class tcp_client
         std::string _address;
         std::string _port;
         bool _is_secure;
+        const logger &_logger;
 };
 
 #endif

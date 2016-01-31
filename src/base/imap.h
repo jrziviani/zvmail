@@ -17,6 +17,8 @@
 #ifndef _IMAP_H
 #define _IMAP_H
 
+#include "src/utils/logger.h"
+
 #include "tcpclient.h"
 #include <string>
 #include <set>
@@ -59,8 +61,11 @@ class imap
     using callbacks_t = std::vector<callback_t>;
 
     public:
-        imap(const tcp_client &tcp);
+        imap(const tcp_client &tcp, logger &log);
         ~imap();
+
+        void get_message(boxes_t folder, unsigned int id);
+        void update_messages();
 
     private:
 
@@ -90,6 +95,7 @@ class imap
         boxes_t _folders;
         char _separator;
         int _counter;
+        logger &_logger;
 };
 
 inline std::string imap::msg_id(bool generate_new)
