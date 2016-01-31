@@ -13,9 +13,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //
 // Copyright (C) 2015-2016 Jose Ricardo Ziviani - zmvar:1,15
-
+#include "src/base/tcpclient.h"
+#include "src/base/imap.h"
+#include "src/utils/logger.h"
 
 int main()
 {
+    logger log("/tmp/zvmail.log");
+    tcp_client tcp("localhost", "143", log);
+    imap myimap(tcp, log);
     return 0;
 }
