@@ -9,11 +9,14 @@ endif
 zvmail_CXXFLAGS = -std=c++11 \
 				  -g3 \
 				  -O0 \
+				  -pthread \
 				  -Wall \
-				  -Werror
-zvmail_SOURCES = src/base/tcpclient.cpp \
+				  -Werror \
+				  -DDEBUG
+zvmail_SOURCES = src/utils/utils.cpp \
+				 src/utils/logger.cpp \
+				 src/base/tcpclient.cpp \
 				 src/base/imap.cpp \
-				 src/utils/utils.cpp \
 				 src/main.cpp
 zvmail_CFLAGS = $(SSL_CFLAGS) \
 				$(PCRE_CFLAGS) \
@@ -33,9 +36,10 @@ test_zvmail_CXXFLAGS = -std=c++11 \
 					   -isystem $(GTEST_DIR)/include \
 					   -isystem $(GMOCK_DIR)/include
 test_zvmail_SOURCES = test/main.cpp \
+					  src/utils/utils.cpp \
+					  src/utils/logger.cpp \
 					  src/base/tcpclient.cpp \
-					  src/base/imap.cpp \
-					  src/utils/utils.cpp
+					  src/base/imap.cpp
 test_zvmail_CFLAGS = $(SSL_CFLAGS) \
 					 $(PCRE_CFLAGS) \
 					 $(SASL_CFLAGS)
