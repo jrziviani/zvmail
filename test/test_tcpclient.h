@@ -22,15 +22,18 @@
 #include <exception>
 
 #include "src/base/tcpclient.h"
+#include "src/utils/logger.h"
 
 TEST (tcp_client, send_scheme)
 {
-    EXPECT_ANY_THROW(tcp_client tcp("http://ziviani.net", "80"));
+    logger log;
+    EXPECT_ANY_THROW(tcp_client tcp("http://ziviani.net", "80", log));
 }
 
 TEST(tcp_client, http_response)
 {
-    tcp_client tcp("ziviani.net", "80");
+    logger log;
+    tcp_client tcp("ziviani.net", "80", log);
     std::string response = tcp.send_message("GET / HTTP/1.1\r\n"
             "Host: ziviani.net\r\n"
             "Scheme: http\r\n"
@@ -42,10 +45,11 @@ TEST(tcp_client, http_response)
 
 TEST(tcp_client, connection_refused)
 {
-    EXPECT_THROW(tcp_client("ziviani.net", "8080"),
+    logger log;
+    EXPECT_THROW(tcp_client("ziviani.net", "8080", log),
             std::runtime_error);
     try {
-        tcp_client("ziviani.net", "8080");
+        tcp_client("ziviani.net", "8080", log);
     } catch (const std::runtime_error &e) {
         EXPECT_STREQ(e.what(), "Connection refused");
     }
@@ -66,7 +70,8 @@ TEST(tcp_client, connection_timeout)
 */
 TEST(tcp_client, https_response)
 {
-    tcp_client tcp("twitter.com", "443");
+    logger log;
+    tcp_client tcp("twitter.com", "443", log);
     std::string response = tcp.send_message("GET / HTTP/1.1\r\n"
             "Host: twitter.com\r\n"
             "Scheme: https\r\n"

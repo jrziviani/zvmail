@@ -22,6 +22,7 @@
 
 #include "src/base/tcpclient.h"
 #include "src/base/imap.h"
+#include "src/utils/logger.h"
 
 #include <string>
 #include <iostream>
@@ -34,16 +35,20 @@ using testing::AnyNumber;
 class mock_tcp_client : public tcp_client
 {
     public:
+        mock_tcp_client(logger &log) :
+            tcp_client(log) { }
+
         MOCK_CONST_METHOD1(send_message, std::string(const std::string &msg));
 };
 
 TEST (imap, login_fail)
 {
-    mock_tcp_client client;
+    logger log;
+    mock_tcp_client client(log);
     EXPECT_CALL(client, send_message(HasSubstr("login")))
             .WillOnce(Return("a1 BAD message"));
     try {
-        imap myimap(client);
+        imap myimap(client, log);
     } catch (const std::runtime_error &e) {
         EXPECT_STREQ(e.what(), "IMAP authentication failed");
     }
@@ -51,13 +56,14 @@ TEST (imap, login_fail)
 
 TEST (imap, login_pass)
 {
-    mock_tcp_client client;
+    logger log;
+    mock_tcp_client client(log);
     EXPECT_CALL(client, send_message(_))
             .Times(AnyNumber());
     EXPECT_CALL(client, send_message(HasSubstr("login")))
             .WillOnce(Return("a1 OK success msg"));
 
-    imap myimap(client);
+    imap myimap(client, log);
     /*
     EXPECT_CALL(client, send_message(HasSubstr("logout")));
     EXPECT_CALL(client, send_message(HasSubstr("close")));
@@ -82,7 +88,8 @@ INBOX.Trash\n * LIST (\\HasNoChildren \\UnMarked) \".\" INBOX.LinkedIn\n \
 * LIST (\\HasNoChildren \\UnMarked) \".\" INBOX.Sent\n * LIST \
 * (\\HasNoChildren \\UnMarked) \".\" INBOX.Drafts\n a1 OK List completed.\n";
 
-    mock_tcp_client client;
+    logger log;
+    mock_tcp_client client(log);
     EXPECT_CALL(client, send_message(_))
         .Times(AnyNumber());
     EXPECT_CALL(client, send_message(HasSubstr("list")))
@@ -91,7 +98,7 @@ INBOX.Trash\n * LIST (\\HasNoChildren \\UnMarked) \".\" INBOX.LinkedIn\n \
         .WillOnce(Return("a1 OK success msg"))
         .RetiresOnSaturation();
 
-    imap myimap(client);
+    imap myimap(client, log);
 }
 
 TEST (imap, list_all_folders2)
@@ -102,7 +109,8 @@ LIST (\\Sent \\HasNoChildren) \"/\" SentMail\n * LIST (\\Marked \\Drafts \
 \\HasNoChildren) \"/\" MyDrafts\n * LIST (\\Trash \\HasNoChildren) \"/\" \
 Trash\n t1 OK done";
 
-    mock_tcp_client client;
+    logger log;
+    mock_tcp_client client(log);
     EXPECT_CALL(client, send_message(_))
         .Times(AnyNumber());
     EXPECT_CALL(client, send_message(HasSubstr("list")))
@@ -111,7 +119,7 @@ Trash\n t1 OK done";
         .WillOnce(Return("a1 OK success msg"))
         .RetiresOnSaturation();
 
-    imap myimap(client);
+    imap myimap(client, log);
 }
 
 TEST (imap, list_all_folders3)
@@ -120,7 +128,8 @@ TEST (imap, list_all_folders3)
 ToDo\n * LIST () \"/\" Projects\n * LIST (\\Sent) \"/\" SentMail\n * LIST \
 (\\Marked \\Drafts) \"/\" MyDrafts\n * LIST (\\Trash) \"/\" Trash\n \
 t2 OK done";
-    mock_tcp_client client;
+    logger log;
+    mock_tcp_client client(log);
     EXPECT_CALL(client, send_message(_))
         .Times(AnyNumber());
     EXPECT_CALL(client, send_message(HasSubstr("list")))
@@ -129,7 +138,7 @@ t2 OK done";
         .WillOnce(Return("a1 OK success msg"))
         .RetiresOnSaturation();
 
-    imap myimap(client);
+    imap myimap(client, log);
 }
 
 
@@ -138,7 +147,8 @@ TEST (imap, list_all_folders4)
     std::string expected = "* LIST (\\Sent) \"/\" SentMail\n * LIST (\\Marked \
 \\Drafts) \"/\" MyDrafts\n * LIST (\\Trash) \"/\" Trash\n t3 OK done";
 
-    mock_tcp_client client;
+    logger log;
+    mock_tcp_client client(log);
     EXPECT_CALL(client, send_message(_))
         .Times(AnyNumber());
     EXPECT_CALL(client, send_message(HasSubstr("list")))
@@ -147,7 +157,7 @@ TEST (imap, list_all_folders4)
         .WillOnce(Return("a1 OK success msg"))
         .RetiresOnSaturation();
 
-    imap myimap(client);
+    imap myimap(client, log);
 }
 
 TEST (imap, list_all_folders5)
@@ -156,7 +166,8 @@ TEST (imap, list_all_folders5)
 (\\NoInferiors \\Marked) \"/\" barter/fred\n * LIST (\\NoInferiors \\Marked) \
 \"/\" barter/joe\n * LIST (\\NoInferiors \\UnMarked) \"/\" barter/pete\n";
 
-    mock_tcp_client client;
+    logger log;
+    mock_tcp_client client(log);
     EXPECT_CALL(client, send_message(_))
         .Times(AnyNumber());
     EXPECT_CALL(client, send_message(HasSubstr("list")))
@@ -165,7 +176,7 @@ TEST (imap, list_all_folders5)
         .WillOnce(Return("a1 OK success msg"))
         .RetiresOnSaturation();
 
-    imap myimap(client);
+    imap myimap(client, log);
 }
 
 TEST (imap, get_folder_details1)
@@ -194,7 +205,8 @@ a10 OK [READ-WRITE] Select completed (0.000 secs).\n";
 ToDo\n * LIST () \"/\" Projects\n * LIST (\\Sent) \"/\" SentMail\n * LIST \
 (\\Marked \\Drafts) \"/\" MyDrafts\n * LIST (\\Trash) \"/\" Trash\n \
 t2 OK done";
-    mock_tcp_client client;
+    logger log;
+    mock_tcp_client client(log);
 
     InSequence s;
     {
@@ -209,13 +221,26 @@ t2 OK done";
             .Times(AnyNumber());
     }
 
-    imap myimap(client);
+    imap myimap(client, log);
+}
+
+TEST (imap, list_messages)
+{
+    std::string expected = "a fetch 1:* flags\n\
+* 1 FETCH (FLAGS (Seen))\n\
+* 2 FETCH (FLAGS (Seen))\n\
+a OK FETCH complete";
+
+    logger log;
+    mock_tcp_client client(log);
+    //imap myimap(client, log);
 }
 
 TEST (imap, destructor_logout)
 {
     using ::testing::InSequence;
-    mock_tcp_client client;
+    logger log;
+    mock_tcp_client client(log);
     InSequence s;
     {
         EXPECT_CALL(client, send_message(HasSubstr("login")))
@@ -230,7 +255,7 @@ TEST (imap, destructor_logout)
             .WillOnce(Return("a1 OK success msg"));
     }
 
-    { imap myimap(client); }
+    { imap myimap(client, log); }
 }
 
 #endif
