@@ -17,6 +17,7 @@ zvmail_SOURCES = src/utils/utils.cpp \
 				 src/utils/logger.cpp \
 				 src/base/tcpclient.cpp \
 				 src/base/imap.cpp \
+				 src/base/types.cpp \
 				 src/main.cpp
 zvmail_CFLAGS = $(SSL_CFLAGS) \
 				$(PCRE_CFLAGS) \
@@ -39,6 +40,7 @@ test_zvmail_SOURCES = test/main.cpp \
 					  src/utils/utils.cpp \
 					  src/utils/logger.cpp \
 					  src/base/tcpclient.cpp \
+					  src/base/types.cpp \
 					  src/base/imap.cpp
 test_zvmail_CFLAGS = $(SSL_CFLAGS) \
 					 $(PCRE_CFLAGS) \
