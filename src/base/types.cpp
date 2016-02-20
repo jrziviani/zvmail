@@ -14,7 +14,7 @@
 //
 // Copyright (C) 2015-2016 Jose Ricardo Ziviani - zmvar:1,15
 
-#include "messages.h"
+#include "types.h"
 #include <iostream>
 #include <stack>
 #include <sstream>
@@ -379,6 +379,7 @@ string folder_t::jsonfy()
 }
 // ----------------------------------------------------------------------------
 
+/*
 using namespace std;
 
 int main()
@@ -547,30 +548,6 @@ int main()
 
     root->foreach_children_rec({print_msg});
 
-/*
-    auto it = root->_children.cbegin();
-    for ( ; it != root->_children.cend(); ++it) {
-        tmp.emplace(*it);
-
-        while (!tmp.empty()) {
-
-            auto top = tmp.top();
-            tmp.pop();
-
-            cout << top->_name << endl;
-            for (auto &msg : top->_messages) {
-                cout << " -> " << msg->subject() << endl;
-                cout << msg->jsonfy() << endl;
-            }
-
-            auto child_it = top->_children.cbegin();
-            for ( ; child_it != top->_children.cend(); ++child_it) {
-                tmp.emplace(*child_it);
-            }
-
-        }
-
-    }
-*/
     return 0;
 }
+*/
