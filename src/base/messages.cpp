@@ -18,71 +18,36 @@
 #include <iostream>
 #include <stack>
 #include <sstream>
+#include <iterator>
 
 using std::string;
 using std::weak_ptr;
 using std::unique_ptr;
 using std::vector;
-using std::wstringstream;
+using std::stringstream;
+using std::stack;
+using std::next;
+
+
+// contact implementation -----------------------------------------------------
+contact_t::contact_t(string name, string email) :
+    _name(name), _email(email)
+{
+
+}
 
 string contact_t::jsonfy() const
 {
-    std::stringstream json;
+    stringstream json;
     json << "{\"_name\"  : \"" << _name  << "\",";
     json << " \"_email\" : \"" << _email << "\"}";
 
     return json.str();
 }
+// ----------------------------------------------------------------------------
 
-string message_t::jsonfy()
-{
-    std::stringstream json;
-    json << "{";
-    json << "\"message\"   : {";
-    json << "\"_id\"       : \"" << _id        << "\",";
-    json << "\"_subject\"  : \"" << _subject   << "\",";
-    json << "\"_body\"     : \"" << _body      << "\",";
-    json << "\"_header\"   : \"" << _header    << "\",";
-    json << "\"_timestamp\": \"" << _timestamp << "\",";
-    json << "\"_is_read\"  : \"" << _is_read   << "\",";
-    json << "\"_is_recent\": \"" << _is_recent << "\",";
-    json << "\"_from\"     : [";
-    for (contacts_t::const_iterator it = _from.begin();
-                                    it != _from.end();
-                                    it++) {
-        json << (it)->jsonfy();
-        json << ((it + 1 == _from.end()) ? "" : ",");
-    }
-    json << "],";
-    json << "\"_to\"     : [";
-    for (contacts_t::const_iterator it = _to.begin();
-                                    it != _to.end();
-                                    it++) {
-        json << (it)->jsonfy();
-        json << ((it + 1 == _to.end()) ? "" : ",");
-    }
-    json << "],";
-    json << "\"_cc\"     : [";
-    for (contacts_t::const_iterator it = _cc.begin();
-                                    it != _cc.end();
-                                    it++) {
-        json << (it)->jsonfy();
-        json << ((it + 1 == _cc.end()) ? "" : ",");
-    }
-    json << "],";
-    json << "\"_bcc\"     : [";
-    for (contacts_t::const_iterator it = _bcc.begin();
-                                    it != _bcc.end();
-                                    it++) {
-        json << (it)->jsonfy();
-        json << ((it + 1 == _bcc.end()) ? "" : ",");
-    }
-    json << "]";
-    json << "}}";
 
-    return json.str();
-}
-
+// message implementation -----------------------------------------------------
 message_t::message_t()
 {
 
@@ -113,12 +78,12 @@ void message_t::is_recent(bool recent)
     _is_recent = recent;
 }
 
-unsigned int message_t::id() const
+unsigned long int message_t::id() const
 {
     return _id;
 }
 
-void message_t::id(unsigned int id)
+void message_t::id(unsigned long int id)
 {
     _id = id;
 }
@@ -208,7 +173,7 @@ void message_t::add_weak_ptr_to_folder(weak_ptr<folder_t> folder)
     _folders.emplace_front(folder);
 }
 
-void message_t::foreach_folder(const callbacks_t &cb_list) const
+void message_t::foreach_folder(const folder_callbacks_t &cb_list) const
 {
     for (auto &folder : _folders) {
 
@@ -223,6 +188,197 @@ void message_t::foreach_folder(const callbacks_t &cb_list) const
     }
 }
 
+string message_t::jsonfy()
+{
+    stringstream json;
+    json << _id <<        ": {";
+    json << "\"_id\"       : \"" << _id        << "\",";
+    json << "\"_subject\"  : \"" << _subject   << "\",";
+    json << "\"_body\"     : \"" << _body      << "\",";
+    json << "\"_header\"   : \"" << _header    << "\",";
+    json << "\"_timestamp\": \"" << _timestamp << "\",";
+    json << "\"_is_read\"  : \"" << _is_read   << "\",";
+    json << "\"_is_recent\": \"" << _is_recent << "\",";
+    json << "\"_from\"     : [";
+    for (contacts_t::const_iterator it = _from.cbegin();
+                                    it != _from.cend();
+                                    it++) {
+        json << it->jsonfy();
+        json << ((it + 1 == _from.cend()) ? "" : ",");
+    }
+    json << "],";
+    json << "\"_to\"     : [";
+    for (contacts_t::const_iterator it = _to.cbegin();
+                                    it != _to.cend();
+                                    it++) {
+        json << it->jsonfy();
+        json << ((it + 1 == _to.end()) ? "" : ",");
+    }
+    json << "],";
+    json << "\"_cc\"     : [";
+    for (contacts_t::const_iterator it = _cc.cbegin();
+                                    it != _cc.cend();
+                                    it++) {
+        json << it->jsonfy();
+        json << ((it + 1 == _cc.cend()) ? "" : ",");
+    }
+    json << "],";
+    json << "\"_bcc\"     : [";
+    for (contacts_t::const_iterator it = _bcc.cbegin();
+                                    it != _bcc.cend();
+                                    it++) {
+        json << it->jsonfy();
+        json << ((it + 1 == _bcc.cend()) ? "" : ",");
+    }
+    json << "],";
+    json << "\"_folders\": [";
+    for (folders_t::const_iterator it = _folders.cbegin();
+                                   it != _folders.cend();
+                                   it++) {
+        const auto folder_ptr = it->lock();
+        json << folder_ptr->id();
+        json << ((next(it) == _folders.cend()) ? "" : ",");
+    }
+    json << "]}";
+
+    return json.str();
+}
+// ----------------------------------------------------------------------------
+
+
+// folder implementation ------------------------------------------------------
+unsigned long int folder_t::id() const
+{
+    return _id;
+}
+
+void folder_t::id(unsigned long int id)
+{
+    _id = id;
+}
+
+string folder_t::name() const
+{
+    return _name;
+}
+
+void folder_t::name(const string &name)
+{
+    _name = name;
+}
+
+std::shared_ptr<folder_t> folder_t::parent() const
+{
+    return _parent.lock();
+}
+
+void folder_t::parent(std::weak_ptr<folder_t> folder)
+{
+    _parent = folder;
+}
+
+void folder_t::add_children(std::weak_ptr<folder_t> folder)
+{
+    _children.emplace_front(folder);
+}
+
+void folder_t::foreach_children(const folder_callbacks_t &cb_list) const
+{
+    for (auto &folder : _children) {
+
+        auto folder_ptr = folder.lock();
+        if (!folder_ptr) {
+            //TODO: log it
+            continue;
+        }
+
+        for (auto &callback : cb_list)
+            callback(folder);
+    }
+}
+
+void folder_t::foreach_children_rec(const folder_callbacks_t &cb_list) const
+{
+    stack<weak_ptr<folder_t>> tmp;
+
+    for (auto &folder : _children)
+        tmp.emplace(folder);
+
+    while (!tmp.empty()) {
+        auto top = tmp.top();
+        tmp.pop();
+
+        for (auto &callback : cb_list)
+            callback(top);
+
+        auto folder = top.lock();
+        if (folder == nullptr)
+            continue;
+
+        for (auto &child : folder->_children)
+            tmp.emplace(child);
+    }
+}
+
+void folder_t::add_message(std::weak_ptr<message_t> message)
+{
+    _messages.emplace_back(message);
+}
+
+messages_weak_t &folder_t::messages()
+{
+    return _messages;
+}
+
+void folder_t::foreach_message(const message_callbacks_t &cb_list) const
+{
+    for (auto &message : _messages) {
+
+        auto message_ptr = message.lock();
+        if (!message_ptr) {
+            //TODO: log it
+            continue;
+        }
+
+        for (auto &callback : cb_list)
+            callback(message);
+    }
+}
+
+string folder_t::jsonfy()
+{
+    stringstream json;
+
+    json << _id << ": {";
+    json << "\"_name\"       : \"" << _name        << "\",";
+    json << "\"_id\"         :   " << _id          << "  ,";
+    if (auto parent_ptr = _parent.lock())
+        json << "\"_parent\" : " << parent_ptr->_id << " ,";
+    else
+        json << "\"_parent\" : \"null\""            << " ,";
+    json << "\"_children\"   : [";
+    for (folders_t::const_iterator it = _children.cbegin();
+                                   it != _children.cend();
+                                   it++) {
+        const auto folder_ptr = it->lock();
+        json << folder_ptr->_id;
+        json << ((next(it) == _children.cend()) ? "" : ",");
+    }
+    json << "],";
+    json << "\"_messages\"   : [";
+    for (messages_weak_t::const_iterator it = _messages.cbegin();
+                                         it != _messages.cend();
+                                         it++) {
+        const auto message_ptr = it->lock();
+        json << message_ptr->id();
+        json << ((it + 1 == _messages.cend()) ? "" : ",");
+    }
+    json << "]}";
+
+    return json.str();
+}
+// ----------------------------------------------------------------------------
+
 using namespace std;
 
 int main()
@@ -230,29 +386,76 @@ int main()
     shared_ptr<folder_t> root(new folder_t);
 
     shared_ptr<folder_t> f1(new folder_t);
-    f1->_name = "Folder 1";
-    f1->_parent = root;
-    root->_children.emplace_front(f1);
+    f1->name("Folder 1");
+    f1->id(1);
+    f1->parent(root);
+    root->add_children(f1);
 
     shared_ptr<folder_t> f2(new folder_t);
-    f2->_name = "Folder 2";
-    f2->_parent = root;
-    root->_children.emplace_front(f2);
+    f2->name("Folder 2");
+    f2->id(2);
+    f2->parent(root);
+    root->add_children(f2);
 
     shared_ptr<folder_t> f2a(new folder_t);
-    f2a->_name = "Folder 2a";
-    f2a->_parent = f2;
-    f2->_children.emplace_front(f2a);
+    f2a->name("Folder 2a");
+    f2a->id(3);
+    f2a->parent(f2);
+    f2->add_children(f2a);
 
     shared_ptr<folder_t> f2aa(new folder_t);
-    f2aa->_name = "Folder 2aa";
-    f2aa->_parent = f2a;
-    f2a->_children.emplace_front(f2aa);
+    f2aa->name("Folder 2aa");
+    f2aa->id(4);
+    f2aa->parent(f2a);
+    f2a->add_children(f2aa);
 
     shared_ptr<folder_t> f2b(new folder_t);
-    f2b->_name = "Folder 2b";
-    f2b->_parent = f2;
-    f2->_children.emplace_front(f2b);
+    f2b->name("Folder 2b");
+    f2b->id(5);
+    f2b->parent(f2);
+    f2->add_children(f2b);
+
+    root->foreach_children({
+            [](weak_ptr<folder_t> folder) {
+                cout << folder.lock()->name() << endl;
+            }
+    });
+    cout << "xxxxxxxxxxxxxxxxxxxxxx" << endl;
+    cout << f1->name() << endl;
+    f1->foreach_children({
+            [](weak_ptr<folder_t> folder) {
+                cout << " -> " << folder.lock()->name() << endl;
+            }
+    });
+    cout << "xxxxxxxxxxxxxxxxxxxxxx" << endl;
+    cout << f2->name() << endl;
+    f2->foreach_children({
+            [](weak_ptr<folder_t> folder) {
+                cout << " -> " << folder.lock()->name() << endl;
+            }
+    });
+    cout << "xxxxxxxxxxxxxxxxxxxxxx" << endl;
+    cout << f2a->name() << endl;
+    f2a->foreach_children({
+            [](weak_ptr<folder_t> folder) {
+                cout << " -> " << folder.lock()->name() << endl;
+            }
+    });
+    cout << "xxxxxxxxxxxxxxxxxxxxxx" << endl;
+    cout << f2aa->name() << endl;
+    f2aa->foreach_children({
+            [](weak_ptr<folder_t> folder) {
+                cout << " -> " << folder.lock()->name() << endl;
+            }
+    });
+    cout << "xxxxxxxxxxxxxxxxxxxxxx" << endl;
+    cout << f2b->name() << endl;
+    f2b->foreach_children({
+            [](weak_ptr<folder_t> folder) {
+                cout << " -> " << folder.lock()->name() << endl;
+            }
+    });
+    cout << "xxxxxxxxxxxxxxxxxxxxxx" << endl;
 
     messages_t messages;
     messages.reserve(20);
@@ -266,8 +469,8 @@ int main()
                        contact_t("Zéça", "ze@yahoo.com.br")};
     msg1->from(from);
     messages.emplace_back(msg1);
-    f1->_messages.push_back(messages.back());
-    f2a->_messages.push_back(messages.back());
+    f1->add_message(messages.back());
+    f2a->add_message(messages.back());
     messages.back()->add_weak_ptr_to_folder(f1);
     messages.back()->add_weak_ptr_to_folder(f2a);
 
@@ -275,15 +478,15 @@ int main()
     msg2->id(1);
     msg2->subject("Message 2");
     messages.emplace_back(msg2);
-    f2a->_messages.push_back(messages.back());
+    f2a->add_message(messages.back());
     messages.back()->add_weak_ptr_to_folder(f2a);
 
     shared_ptr<message_t> msg3(new message_t);
     msg3->id(2);
     msg3->subject("Message 3");
     messages.emplace_back(msg3);
-    f2b->_messages.push_back(messages.back());
-    f2aa->_messages.push_back(messages.back());
+    f2b->add_message(messages.back());
+    f2aa->add_message(messages.back());
     messages.back()->add_weak_ptr_to_folder(f2b);
     messages.back()->add_weak_ptr_to_folder(f2aa);
 
@@ -291,8 +494,8 @@ int main()
     msg4->id(3);
     msg4->subject("Message 4");
     messages.emplace_back(msg4);
-    f1->_messages.push_back(messages.back());
-    f2aa->_messages.push_back(messages.back());
+    f1->add_message(messages.back());
+    f2aa->add_message(messages.back());
     messages.back()->add_weak_ptr_to_folder(f1);
     messages.back()->add_weak_ptr_to_folder(f2aa);
 
@@ -300,11 +503,11 @@ int main()
     msg5->id(4);
     msg5->subject("Message 5");
     messages.emplace_back(msg5);
-    f1->_messages.push_back(messages.back());
+    f1->add_message(messages.back());
     messages.back()->add_weak_ptr_to_folder(f1);
 
     cout << "test --------\n";
-    cout << &f2b->_messages[0] << endl;
+    //cout << &f2b->_messages[0] << endl;
     cout << &messages[0] << endl;
     cout << &messages[1] << endl;
     cout << &messages[2] << endl;
@@ -314,16 +517,16 @@ int main()
     cout << "test --------\n";
 
     for (auto &msg : messages) {
-        cout << &msg << " - " << msg->id() << endl;
+        //cout << &msg << " - " << msg->id() << endl;
         cout << msg->subject() << endl;
 
         auto cb = [](weak_ptr<folder_t> folder) {
             auto folder_ptr = folder.lock();
-            cout << folder_ptr << ": " << folder_ptr->_name;
+            cout << " -> " << folder_ptr << ": " << folder_ptr->name();
             cout << "\n";
         };
 
-        callbacks_t cbs;
+        folder_callbacks_t cbs;
         cbs.emplace_back(cb);
 
         msg->foreach_folder(cbs);
@@ -332,8 +535,19 @@ int main()
     cout << "------------\n";
 
 
-    stack<shared_ptr<folder_t>> tmp;
+    auto print_msg = [](weak_ptr<folder_t> folder)
+    {
+        auto folder_ptr = folder.lock();
+        cout << "[" << folder_ptr->name() << "]\n";
+        for (const auto &msg : folder_ptr->messages()) {
+            auto msg_ptr = msg.lock();
+            cout << " -> " << msg_ptr->subject() << endl;
+        }
+    };
 
+    root->foreach_children_rec({print_msg});
+
+/*
     auto it = root->_children.cbegin();
     for ( ; it != root->_children.cend(); ++it) {
         tmp.emplace(*it);
@@ -357,5 +571,6 @@ int main()
         }
 
     }
+*/
     return 0;
 }
