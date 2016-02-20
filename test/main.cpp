@@ -16,6 +16,7 @@
 
 #include "test_tcpclient.h"
 #include "test_imap.h"
+#include "test_types.h"
 
 int main(int argc, char* argv[])
 {
