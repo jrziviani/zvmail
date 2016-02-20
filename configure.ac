@@ -1,6 +1,6 @@
 AC_INIT([zvmail], [0.1-0])
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.68])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -18,14 +18,14 @@ PKG_CHECK_MODULES(SSL, openssl >= 1.0.1,
                   [echo "OpenSSL is required"
                    exit -1])
 
-PKG_CHECK_MODULES(PCRE, libpcrecpp >= 8.31,
+PKG_CHECK_MODULES(PCRE, libpcrecpp >= 8.12,
                   [],
-                  [echo "libpcre3-dev >= 8.31 is required"
+                  [echo "libpcre3-dev >= 8.12 is required"
                    exit -1])
 
-PKG_CHECK_MODULES(SASL, libgsasl >= 1.8,
+PKG_CHECK_MODULES(SASL, libgsasl >= 1.5,
                   [],
-                  [echo "libgsasl7-dev >= 1.8 is required"
+                  [echo "libgsasl7-dev >= 1.5 is required"
                    exit -1])
 
 AC_ARG_VAR(GTEST_DIR,
