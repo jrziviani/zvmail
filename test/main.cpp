@@ -18,8 +18,12 @@
 #include "test_imap.h"
 #include "test_types.h"
 
+#include <locale>
+
 int main(int argc, char* argv[])
 {
+    std::locale::global(std::locale(""));
+
     //testing::InitGoogleTest(&argc, argv);
     testing::InitGoogleMock(&argc, argv);
 

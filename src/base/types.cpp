@@ -20,27 +20,33 @@
 #include <sstream>
 #include <iterator>
 
-using std::string;
+using std::wstring;
 using std::weak_ptr;
 using std::unique_ptr;
 using std::vector;
-using std::stringstream;
+using std::wstringstream;
 using std::stack;
 using std::next;
 
 
 // contact implementation -----------------------------------------------------
-contact_t::contact_t(string name, string email) :
+contact_t::contact_t() :
+    _name(L""), _email(L"")
+{
+
+}
+
+contact_t::contact_t(wstring name, wstring email) :
     _name(name), _email(email)
 {
 
 }
 
-string contact_t::jsonfy() const
+wstring contact_t::jsonfy() const
 {
-    stringstream json;
-    json << "{\"_name\"  : \"" << _name  << "\",";
-    json << " \"_email\" : \"" << _email << "\"}";
+    wstringstream json;
+    json << L"{\"_name\"  : \"" << _name  << L"\",";
+    json << L" \"_email\" : \"" << _email << L"\"}";
 
     return json.str();
 }
@@ -88,52 +94,52 @@ void message_t::id(unsigned long int id)
     _id = id;
 }
 
-string message_t::subject() const
+wstring message_t::subject() const
 {
     return _subject;
 }
 
-void message_t::subject(const string &subject)
+void message_t::subject(const wstring &subject)
 {
     _subject = subject;
 }
 
-string message_t::body() const
+wstring message_t::body() const
 {
     return _body;
 }
 
-void message_t::body(const string &body)
+void message_t::body(const wstring &body)
 {
     _body = body;
 }
 
-string message_t::header() const
+wstring message_t::header() const
 {
     return _header;
 }
 
-void message_t::header(const string &header)
+void message_t::header(const wstring &header)
 {
     _header = header;
 }
 
-string message_t::timestamp() const
+wstring message_t::timestamp() const
 {
     return _timestamp;
 }
 
-void message_t::timestamp(const string &timestamp)
+void message_t::timestamp(const wstring &timestamp)
 {
     _timestamp = timestamp;
 }
 
-contacts_t message_t::from() const
+contact_t message_t::from() const
 {
     return _from;
 }
 
-void message_t::from(const contacts_t &from)
+void message_t::from(const contact_t &from)
 {
     _from = from;
 }
@@ -188,10 +194,10 @@ void message_t::foreach_folder(const folder_callbacks_t &cb_list) const
     }
 }
 
-string message_t::jsonfy()
+wstring message_t::jsonfy()
 {
-    stringstream json;
-    json << _id <<        ": {";
+    wstringstream json;
+    json << "\"" << _id  << "\": {";
     json << "\"_id\"       : \"" << _id        << "\",";
     json << "\"_subject\"  : \"" << _subject   << "\",";
     json << "\"_body\"     : \"" << _body      << "\",";
@@ -199,14 +205,7 @@ string message_t::jsonfy()
     json << "\"_timestamp\": \"" << _timestamp << "\",";
     json << "\"_is_read\"  : \"" << _is_read   << "\",";
     json << "\"_is_recent\": \"" << _is_recent << "\",";
-    json << "\"_from\"     : [";
-    for (contacts_t::const_iterator it = _from.cbegin();
-                                    it != _from.cend();
-                                    it++) {
-        json << it->jsonfy();
-        json << ((it + 1 == _from.cend()) ? "" : ",");
-    }
-    json << "],";
+    json << "\"_from\"     : " << _from.jsonfy() << ",";
     json << "\"_to\"     : [";
     for (contacts_t::const_iterator it = _to.cbegin();
                                     it != _to.cend();
@@ -257,12 +256,12 @@ void folder_t::id(unsigned long int id)
     _id = id;
 }
 
-string folder_t::name() const
+wstring folder_t::name() const
 {
     return _name;
 }
 
-void folder_t::name(const string &name)
+void folder_t::name(const wstring &name)
 {
     _name = name;
 }
@@ -345,9 +344,9 @@ void folder_t::foreach_message(const message_callbacks_t &cb_list) const
     }
 }
 
-string folder_t::jsonfy()
+wstring folder_t::jsonfy()
 {
-    stringstream json;
+    wstringstream json;
 
     json << _id << ": {";
     json << "\"_name\"       : \"" << _name        << "\",";

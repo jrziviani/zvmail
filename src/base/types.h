@@ -25,15 +25,30 @@
 #include <functional>
 
 
+// serialable definition ------------------------------------------------------
+class serialazable
+{
+    public:
+        virtual ~serialazable();
+
+        virtual std::wstring jsonfy() const = 0;
+        void save();
+        void load();
+        void flush();
+};
+// ----------------------------------------------------------------------------
+
+
 // contact definition ---------------------------------------------------------
 struct contact_t
 {
-    std::string _name;
-    std::string _email;
+    std::wstring _name;
+    std::wstring _email;
 
-    contact_t(std::string name, std::string email);
+    contact_t();
+    contact_t(std::wstring name, std::wstring email);
 
-    std::string jsonfy() const;
+    std::wstring jsonfy() const;
 };
 using contacts_t = std::vector<contact_t>;
 // ----------------------------------------------------------------------------
@@ -63,20 +78,20 @@ class message_t
         unsigned long int id() const;
         void id(unsigned long int id);
 
-        std::string subject() const;
-        void subject(const std::string &subject);
+        std::wstring subject() const;
+        void subject(const std::wstring &subject);
 
-        std::string body() const;
-        void body(const std::string &body);
+        std::wstring body() const;
+        void body(const std::wstring &body);
 
-        std::string header() const;
-        void header(const std::string &header);
+        std::wstring header() const;
+        void header(const std::wstring &header);
 
-        std::string timestamp() const;
-        void timestamp(const std::string &timestamp);
+        std::wstring timestamp() const;
+        void timestamp(const std::wstring &timestamp);
 
-        contacts_t from() const;
-        void from(const contacts_t &from);
+        contact_t from() const;
+        void from(const contact_t &from);
 
         contacts_t to() const;
         void to(const contacts_t &to);
@@ -90,17 +105,17 @@ class message_t
         void add_weak_ptr_to_folder(std::weak_ptr<folder_t> folder);
         void foreach_folder(const folder_callbacks_t &cb_list) const;
 
-        std::string jsonfy();
+        std::wstring jsonfy();
 
     private:
         bool _is_read;
         bool _is_recent;
         unsigned long int _id;
-        std::string _subject;
-        std::string _body;
-        std::string _header;
-        std::string _timestamp;
-        contacts_t _from;
+        std::wstring _subject;
+        std::wstring _body;
+        std::wstring _header;
+        std::wstring _timestamp;
+        contact_t _from;
         contacts_t _to;
         contacts_t _cc;
         contacts_t _bcc;
@@ -122,8 +137,8 @@ class folder_t
         unsigned long int id() const;
         void id(unsigned long int id);
 
-        std::string name() const;
-        void name(const std::string &name);
+        std::wstring name() const;
+        void name(const std::wstring &name);
 
         std::shared_ptr<folder_t> parent() const;
         void parent(std::weak_ptr<folder_t> folder);
@@ -136,11 +151,11 @@ class folder_t
         messages_weak_t &messages();
         void foreach_message(const message_callbacks_t &cb_list) const;
 
-        std::string jsonfy();
+        std::wstring jsonfy();
 
     private:
         unsigned long int _id;
-        std::string _name;
+        std::wstring _name;
         std::weak_ptr<folder_t> _parent;
         folders_t _children;
         messages_weak_t _messages;
